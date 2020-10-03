@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "866946831098",
+    "firebase_url": "https://shram-test-43fb3.firebaseio.com",
+    "project_id": "shram-test-43fb3",
+    "storage_bucket": "shram-test-43fb3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:866946831098:android:ad93439c654950d8acaf43",
+        "android_client_info": {
+          "package_name": "com.stanworld.shram"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "866946831098-2nfb2hr6cvorm7vp3umn5gfb6r0eu525.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKfxv49XDnTLJhCvyekAETvQamVqQ0L54"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "866946831098-2nfb2hr6cvorm7vp3umn5gfb6r0eu525.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
