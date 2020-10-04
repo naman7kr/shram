@@ -27,24 +27,10 @@ class WorkersSearch extends MySearchDelegate<Worker> {
     query = newQuery;
   }
 
-  Stream<List<DocumentSnapshot>> getStreamFromService() {
-    switch (_selectedOption) {
-      case 1:
-        return _searchService.searchNameStream;
-      case 2:
-        return _searchService.searchPhoneStream;
-      case 3:
-        return _searchService.searchAadharStream;
-      default:
-        return null;
-    }
-  }
-
   void _onSuggestionTap(String suggestion, BuildContext context) async {
     query = suggestion;
     await getSuggestions();
-    _searchResult(
-        query, getStreamFromService(), ListTypeHelper.getEnum(_selectedOption));
+    _searchResult(query, ListTypeHelper.getEnum(_selectedOption));
     // _searchService.dispose();
     close(context, null);
   }
@@ -140,8 +126,7 @@ class WorkersSearch extends MySearchDelegate<Worker> {
 
   @override
   void buildResults(BuildContext context) {
-    _searchResult(
-        query, getStreamFromService(), ListTypeHelper.getEnum(_selectedOption));
+    _searchResult(query, ListTypeHelper.getEnum(_selectedOption));
     // _searchService.dispose();
     close(context, null);
   }
@@ -169,14 +154,14 @@ class WorkersSearch extends MySearchDelegate<Worker> {
     }
   }
 
-  Stream<List<DocumentSnapshot>> getStream(SearchPageModel model) {
+  Future<List<DocumentSnapshot>> getData(SearchPageModel model) async {
     switch (_selectedOption) {
       case 1:
-        return model.nameStream;
+        return model.fetchFirstNameList(query, cat);
       case 2:
-        return model.phoneStream;
+        return model.fetchFirstPhoneList(query, cat);
       case 3:
-        return model.aadharStream;
+        return model.fetchNextAadharList(query, cat);
       default:
         return null;
     }
@@ -190,11 +175,11 @@ class WorkersSearch extends MySearchDelegate<Worker> {
         return model;
       },
       builder: (context, model, child) {
-        return StreamBuilder<List<DocumentSnapshot>>(
-            stream: getStream(model),
-            builder: (context, streamSnapshot) {
-              if (streamSnapshot.hasData) {
-                var suggestions = streamSnapshot.data;
+        return FutureBuilder<List<DocumentSnapshot>>(
+            future: getData(model),
+            builder: (context, dataSnapshot) {
+              if (dataSnapshot.hasData) {
+                var suggestions = dataSnapshot.data;
                 // print(suggestions);
                 suggestions =
                     suggestions.take(integer.suggestions_limit).toList();

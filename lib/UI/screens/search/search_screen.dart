@@ -33,7 +33,7 @@ class _SearchScreenState extends State<SearchScreen> {
   SearchService _searchService;
   MultiSelectController _multiSelectController = new MultiSelectController();
   Categories cat;
-  AsyncSnapshot<List<DocumentSnapshot>> snapshot;
+  List<DocumentSnapshot> displayList = [];
   bool isFirstTime = true;
   @override
   void dispose() {
@@ -47,9 +47,9 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     _scrollController.addListener(_scrollListener);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (snapshot != null) {
+      if (displayList != null) {
         setState(() {
-          _multiSelectController.set(snapshot.data.length);
+          _multiSelectController.set(displayList.length);
         });
       }
     });
@@ -75,7 +75,8 @@ class _SearchScreenState extends State<SearchScreen> {
     _searchService = locator<SearchService>();
     _workersService = locator<WorkersService>();
     try {
-      await _workersService.fetchFirstWorkersListBasedOnCategory(cat);
+      displayList =
+          await _workersService.fetchFirstWorkersListBasedOnCategory(cat);
       setState(() {
         _isLoading = false;
       });
@@ -118,30 +119,36 @@ class _SearchScreenState extends State<SearchScreen> {
         context: context, delegate: WorkersSearch(_searchResult, cat));
   }
 
-  void _searchResult(
-      String query, Stream<List<DocumentSnapshot>> resultList, ListType type) {
+  Future _searchResult(
+      String query, List<DocumentSnapshot> resultList, ListType type) async {
     this.searchType = type;
     this.query = query;
+    try {
+      _isLoading = true;
+      displayList = await getSearchList(query);
+    } catch (err) {
+      _isLoading = false;
+      setState(() {});
+    }
+  }
 
-    // searchResultList.listen((event) {
-    //   event.forEach((element) {
-    _searchService.searchNameStream.listen((event) {
-      print("SEARCH LENGTH" + event.length.toString());
-    });
-    // print("SEARCH LENGTH" + _searchService.searchNameStream.length.toString());
-    //   });
-    // });
+  Future<List<DocumentSnapshot>> getSearchList(String query) {
+    if (searchType == ListType.NAME) {
+      return _searchService.fetchFirstSearchName(query, cat);
+    } else if (searchType == ListType.PHONE) {
+      return _searchService.fetchFirstSearchPhone(query, cat);
+    } else {
+      return _searchService.fetchFirstSearchAadhar(query, cat);
+    }
+  }
+
+  Future removeFavourite(DocumentSnapshot workerSnapshot) async {
+    _workersService.removeFavourite(workerSnapshot);
     setState(() {});
   }
 
-  Stream<List<DocumentSnapshot>> getSearchStream() {
-    if (searchType == ListType.NAME) {
-      return _searchService.searchNameStream;
-    } else if (searchType == ListType.PHONE) {
-      return _searchService.searchPhoneStream;
-    } else {
-      return _searchService.searchAadharStream;
-    }
+  Future addFavourite(DocumentSnapshot workerSnapshot) async {
+    _workersService.addFavourite(workerSnapshot);
   }
 
   @override
@@ -156,104 +163,91 @@ class _SearchScreenState extends State<SearchScreen> {
                 ? Center(
                     child: CircularProgressIndicator(),
                   )
-                : StreamBuilder<List<DocumentSnapshot>>(
-                    stream: query.isEmpty
-                        ? model.getWorkersDocumentStream()
-                        : getSearchStream(),
-                    builder: (context, snapshot) {
-                      this.snapshot = snapshot;
-                      if (snapshot.hasData && snapshot.data.length != 0) {
-                        return SingleChildScrollView(
-                          controller: _scrollController,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              children: [
-                                query.isEmpty
-                                    ? Container()
-                                    : Container(
-                                        alignment: Alignment.topLeft,
-                                        margin: EdgeInsets.only(
-                                            left: 10, bottom: 20, top: 20),
-                                        child: Text(
-                                          'Search Result for $query',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .headline3,
-                                        ),
-                                      ),
-                                _buildWorkersListWidget(model, snapshot),
-                                _isLoadingNext
-                                    ? Container(
-                                        height: 100,
-                                        alignment: Alignment.center,
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : Container(),
-                              ],
-                            ),
-                          ),
-                        );
-                      } else {
-                        return FutureBuilder(
-                          future: model.checkInternetConnection(),
-                          builder: (context, connectionSnapshot) {
-                            // print(connectionSnapshot.connectionState);
-                            if (connectionSnapshot.connectionState ==
-                                ConnectionState.done) {
-                              if (connectionSnapshot.data as bool) {
-                                return Stack(
-                                  children: [
-                                    Align(
+                : displayList.length > 0
+                    ? SingleChildScrollView(
+                        controller: _scrollController,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              query.isEmpty
+                                  ? Container()
+                                  : Container(
                                       alignment: Alignment.topLeft,
-                                      child: query.isEmpty
-                                          ? Container()
-                                          : Container(
-                                              alignment: Alignment.topLeft,
-                                              margin: EdgeInsets.only(
-                                                  left: 10,
-                                                  bottom: 20,
-                                                  top: 20),
-                                              child: Text(
-                                                'Search Result for $query',
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .headline3,
-                                              ),
-                                            ),
+                                      margin: EdgeInsets.only(
+                                          left: 10, bottom: 20, top: 20),
+                                      child: Text(
+                                        'Search Result for $query',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headline3,
+                                      ),
                                     ),
-                                    Align(
-                                        alignment: Alignment.center,
-                                        child: Text('No items')),
-                                  ],
-                                );
-                              } else {
-                                return Align(
-                                    alignment: Alignment.center,
-                                    child: ConnectionError(
-                                        onReload: _loadInitialData));
-                              }
-                            } else {
-                              print('Hello');
-                              return Center(
-                                child: CircularProgressIndicator(),
+                              _buildWorkersListWidget(),
+                              _isLoadingNext
+                                  ? Container(
+                                      height: 100,
+                                      alignment: Alignment.center,
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : Container(),
+                            ],
+                          ),
+                        ),
+                      )
+                    : FutureBuilder(
+                        future: model.checkInternetConnection(),
+                        builder: (context, connectionSnapshot) {
+                          // print(connectionSnapshot.connectionState);
+                          if (connectionSnapshot.connectionState ==
+                              ConnectionState.done) {
+                            if (connectionSnapshot.data as bool) {
+                              return Stack(
+                                children: [
+                                  Align(
+                                    alignment: Alignment.topLeft,
+                                    child: query.isEmpty
+                                        ? Container()
+                                        : Container(
+                                            alignment: Alignment.topLeft,
+                                            margin: EdgeInsets.only(
+                                                left: 10, bottom: 20, top: 20),
+                                            child: Text(
+                                              'Search Result for $query',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .headline3,
+                                            ),
+                                          ),
+                                  ),
+                                  Align(
+                                      alignment: Alignment.center,
+                                      child: Text('No items')),
+                                ],
                               );
+                            } else {
+                              return Align(
+                                  alignment: Alignment.center,
+                                  child: ConnectionError(
+                                      onReload: _loadInitialData));
                             }
-                          },
-                        );
-                      }
-                    },
-                  ),
+                          } else {
+                            print('Hello');
+                            return Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                        },
+                      ),
           ),
         );
       },
     );
   }
 
-  Widget _buildWorkersListWidget(
-      WorkersPageModel model, AsyncSnapshot<dynamic> snapshot) {
+  Widget _buildWorkersListWidget() {
     return ListView.builder(
-        itemCount: snapshot.data.length,
+        itemCount: displayList.length,
         physics: NeverScrollableScrollPhysics(),
         shrinkWrap: true,
         itemBuilder: (_, i) => MultiSelectItem(
@@ -268,9 +262,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     ? BoxDecoration(color: Colors.grey[300])
                     : BoxDecoration(),
                 child: WorkerItem(
-                    snapshot.data[i],
+                    displayList[i],
                     _multiSelectController.isSelecting,
-                    _multiSelectController.isSelected(i)),
+                    _multiSelectController.isSelected(i),
+                    removeFavourite,
+                    addFavourite),
               ),
             ));
   }

@@ -21,7 +21,11 @@ class WorkersPageModel extends BaseModel {
     return await _workersService.checkInternetConnection();
   }
 
-  Stream<List<DocumentSnapshot>> getWorkersDocumentStream() {
-    return _workersService.workerStream;
+  Future<List<DocumentSnapshot>> fetchFirstWorkersDocument(cat) {
+    return _workersService.fetchFirstWorkersListBasedOnCategory(cat);
+  }
+
+  List<DocumentSnapshot> getWorkersDocument() {
+    return _workersService.workerDocList;
   }
 }

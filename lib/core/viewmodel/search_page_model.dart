@@ -6,10 +6,38 @@ import 'package:shram/locator.dart';
 
 class SearchPageModel extends BaseModel {
   final SearchService _searchService = locator<SearchService>();
-  Stream<List<DocumentSnapshot>> get nameStream =>
-      _searchService.searchNameStream;
-  Stream<List<DocumentSnapshot>> get phoneStream =>
-      _searchService.searchPhoneStream;
-  Stream<List<DocumentSnapshot>> get aadharStream =>
-      _searchService.searchAadharStream;
+
+  Future<List<DocumentSnapshot>> fetchFirstNameList(
+      String query, Categories cat) {
+    return _searchService.fetchFirstSearchName(query, cat);
+  }
+
+  Future<List<DocumentSnapshot>> fetchFirstPhoneList(
+      String query, Categories cat) {
+    return _searchService.fetchFirstSearchPhone(query, cat);
+  }
+
+  Future<List<DocumentSnapshot>> fetchFirstAadharList(
+      String query, Categories cat) {
+    return _searchService.fetchFirstSearchAadhar(query, cat);
+  }
+
+  Future<List<DocumentSnapshot>> fetchNextNameList(
+      String query, Categories cat) {
+    return _searchService.fetchNextSearchName(query, cat);
+  }
+
+  Future<List<DocumentSnapshot>> fetchNextPhoneList(
+      String query, Categories cat) {
+    return _searchService.fetchNextSearchPhone(query, cat);
+  }
+
+  Future<List<DocumentSnapshot>> fetchNextAadharList(
+      String query, Categories cat) {
+    return _searchService.fetchFirstSearchAadhar(query, cat);
+  }
+
+  List<DocumentSnapshot> get nameList => _searchService.searchNameList;
+  List<DocumentSnapshot> get phoneList => _searchService.searchPhoneList;
+  List<DocumentSnapshot> get aadharList => _searchService.searchAadharList;
 }

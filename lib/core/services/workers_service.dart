@@ -8,19 +8,13 @@ import 'package:shram/core/models/worker.dart';
 import 'package:shram/core/services/services.dart';
 
 class WorkersService extends Services {
-  List<DocumentSnapshot> documentList;
+  List<DocumentSnapshot> workerDocList = [];
 
-  BehaviorSubject<List<DocumentSnapshot>> workerController;
-  BehaviorSubject<List<Map<String, Object>>> workerFavouriteController;
+  List<Map<String, Object>> favourites = [];
 
   WorkersService() {
-    workerController = BehaviorSubject<List<DocumentSnapshot>>();
-    workerFavouriteController = BehaviorSubject<List<Map<String, Object>>>();
     // firestore.enablePersistence().catchError((err) => print(err));
   }
-  Stream<List<DocumentSnapshot>> get workerStream => workerController.stream;
-  Stream<List<Map<String, Object>>> get workerFavouriteStream =>
-      workerFavouriteController.stream;
 
   Future<void> addWorker(Worker worker) async {
     firestore.runTransaction((tx) async {
@@ -61,7 +55,7 @@ class WorkersService extends Services {
   Future<ResultType> getAllWorkers() async {
     try {
       var result = await workersRef.get();
-      documentList = result.docs;
+      workerDocList = result.docs;
 
       return ResultType.SUCCESSFUL;
     } catch (err) {
@@ -70,44 +64,28 @@ class WorkersService extends Services {
     }
   }
 
-  Future<ResultType> fetchFirstWorkersListBasedOnCategory(
+  Future<List<DocumentSnapshot>> fetchFirstWorkersListBasedOnCategory(
       Categories cat) async {
-    try {
-      var result = await workersRef
-          .where('skillType', isEqualTo: cat.name)
-          .limit(integer.fetch_size)
-          .get()
-          .timeout(Duration(seconds: integer.fetch_timeout));
-      print('lol');
-      documentList = result.docs;
-
-      workerController.sink.add(documentList);
-      return ResultType.SUCCESSFUL;
-    } catch (err) {
-      // error fetching the data
-      print(err);
-      workerController.addError(err);
-      return ResultType.ERROR;
-    }
+    var result = await workersRef
+        .where('skillType', isEqualTo: cat.name)
+        .limit(integer.fetch_size)
+        .get()
+        .timeout(Duration(seconds: integer.fetch_timeout));
+    print('lol');
+    workerDocList = result.docs;
+    return workerDocList;
   }
 
-  Future<ResultType> fetchNextWorkersList(Categories cat) async {
-    try {
-      print('NEXT START');
-      var result = await workersRef
-          .where('skillType', isEqualTo: cat.name)
-          .startAfterDocument(documentList[documentList.length - 1])
-          .limit(integer.fetch_size)
-          .get();
-      print('NEXT SUCCESS');
-      documentList.addAll(result.docs);
-      workerController.sink.add(documentList);
-      return ResultType.SUCCESSFUL;
-    } catch (err) {
-      print('NEXT ERROR');
-      workerController.addError(err);
-      return ResultType.UNSUCCESSFUL;
-    }
+  Future fetchNextWorkersList(Categories cat) async {
+    print('NEXT START');
+    var result = await workersRef
+        .where('skillType', isEqualTo: cat.name)
+        .startAfterDocument(workerDocList[workerDocList.length - 1])
+        .limit(integer.fetch_size)
+        .get();
+    print('NEXT SUCCESS');
+    workerDocList.addAll(result.docs);
+    return workerDocList;
   }
 
   Future fetchFavourites() async {
@@ -115,59 +93,77 @@ class WorkersService extends Services {
       var result = await userCollectionRef
           .doc(firebaseUser.uid)
           .collection('Favourites')
-          .orderBy('addTime', descending: true)
+          .orderBy('addedOn', descending: true)
           .get();
-      result.docs.forEach((doc) async {
-        var workerDocs = await workersRef
-            .where('id', isEqualTo: doc.data()['workerId'])
-            .get();
+      if (result.docs != null) {
+        List<Map<String, Object>> resultList = [];
+        result.docs.forEach((doc) async {
+          Interests personOfInterest = Interests.fromMap(doc.data());
+          var resultWorker =
+              await workersRef.doc(personOfInterest.workerDocRef).get();
 
-        // merge the lists ...
-        List<Map<String, Object>> finalList = [];
-        for (var userDoc in result.docs) {
-          var doc = workerDocs.docs.firstWhere(
-              (element) => userDoc.data()['workerId'] == element.data()['id']);
-          if (doc != null) {
-            finalList.add({
-              'addTime': userDoc.data()['addTime'],
-              'worker': Worker.fromJson(doc.data())
-            });
-          }
-        }
-        workerFavouriteController.sink.add(finalList);
-      });
+          resultList.add(
+              {'addedOn': personOfInterest.addedOn, 'workerDoc': resultWorker});
+        });
+        favourites.addAll(resultList);
+      }
     }).timeout(Duration(seconds: integer.fetch_timeout));
   }
 
-  Future toggleFavourite(DocumentSnapshot workerDocument) async {
-    Worker worker = Worker.fromJson(workerDocument.data());
-    PersonOfInterest personOfInterest =
-        new PersonOfInterest(workerId: worker.id, addTime: Timestamp.now());
-    if (worker.popularity == null) {
-      worker.popularity = [];
-    }
-    worker.popularity.add(Timestamp.now());
+  Future removeFavourite(DocumentSnapshot workerSnapshot) async {
     firestore.runTransaction((transaction) async {
-      final existingFavourite =  await userCollectionRef
+      var documents = await userCollectionRef
           .doc(firebaseUser.uid)
           .collection('Favourites')
-          .where('workerId', isEqualTo: worker.id)
+          .where('workerDocRef', isEqualTo: workerSnapshot.id)
           .get();
-      if(existingFavourite.)
+
+      await documents.docs.first.reference.delete();
+      List<String> uids = workerSnapshot.data()['usersInterested'];
+      uids.removeWhere((uid) => uid.compareTo(firebaseUser.uid) == 0);
+      await workersRef.doc(workerSnapshot.id).update({'usersInterested': uids});
+      favourites.removeWhere((favMap) =>
+          (favMap['workerDoc'] as DocumentSnapshot) == workerSnapshot);
+    });
+  }
+
+  Future addFavourite(DocumentSnapshot workerSnapshot) async {
+    firestore.runTransaction((transaction) async {
+      Timestamp addTime = Timestamp.now();
+      Interests interests =
+          new Interests(workerDocRef: workerSnapshot.id, addedOn: addTime);
+      List<String> uids = workerSnapshot.data()['usersInterested'];
+      if (uids == null) {
+        uids = [];
+      }
+      uids.add(firebaseUser.uid);
       await userCollectionRef
           .doc(firebaseUser.uid)
           .collection('Favourites')
-          .add(personOfInterest.toMap());
-      await workersRef
-          .doc(workerDocument.id)
-          .update({'popularity': worker.popularity});
-    }).timeout(Duration(seconds: integer.update_timeout));
+          .add(interests.toMap());
+      await workersRef.doc(workerSnapshot.id).update({'usersInterested': uids});
+      DocumentSnapshot resultWorker =
+          await workersRef.doc(workerSnapshot.id).get();
+      favourites.add({'addedOn': addTime, 'workerDoc': resultWorker});
+    });
   }
 
-  Future addMultipleFavourite(List<DocumentSnapshot> workerDocuments) async {}
-
-  void dispose() {
-    workerController.close();
-    workerFavouriteController.close();
+  Future addMultipleFavourites(List<DocumentSnapshot> workerDocuments) async {
+    firestore.runTransaction((transaction) async {
+      workerDocuments.forEach((document) {
+        addFavourite(document);
+      });
+    });
   }
+
+  Future removeMultipleFavourites(
+      List<DocumentSnapshot> workerDocuments) async {
+    firestore.runTransaction((transaction) async {
+      workerDocuments.forEach((document) {
+        removeFavourite(document);
+      });
+    });
+  }
+
+  void dispose() {}
 }

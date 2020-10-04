@@ -11,7 +11,7 @@ class Worker {
   List<String> searchName = [];
   List<String> searchPhone = [];
   List<String> searchAadhar = [];
-  List<Timestamp> popularity = [];
+  List<Timestamp> usersInterested = [];
 
   Worker(
       {this.id,
@@ -24,7 +24,7 @@ class Worker {
       this.searchName,
       this.searchPhone,
       this.searchAadhar,
-      this.popularity});
+      this.usersInterested});
 
   Map<String, dynamic> toMap() {
     return {
@@ -38,7 +38,7 @@ class Worker {
       'searchName': this.searchName,
       'searchPhone': this.searchPhone,
       'searchAadhar': this.searchAadhar,
-      'popularity': this.popularity.map((e) => {'visitedOn': e}).toList()
+      'usersInterested': this.usersInterested.map((e) => {'uid': e}).toList()
     };
   }
 
@@ -51,7 +51,7 @@ class Worker {
         address: data['address'],
         isSkilled: data['isSkilled'],
         skillType: data['skillType'],
-        popularity:
-            (data['popularity'] as List).map((e) => e['visitedOn']).toList());
+        usersInterested:
+            (data['usersInterested'] as List).map((e) => e['uid']).toList());
   }
 }

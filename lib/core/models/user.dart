@@ -9,7 +9,6 @@ class User {
   String address;
   String phoneNumber;
   bool isAdmin;
-  List<PersonOfInterest> personOfInterests = [];
 
   User(
       {this.id,
@@ -17,7 +16,6 @@ class User {
       this.email,
       this.address,
       this.phoneNumber,
-      this.personOfInterests,
       this.isAdmin});
   static User fromMap(Map<String, dynamic> data) {
     return User(
@@ -26,9 +24,6 @@ class User {
         email: data['email'],
         address: data['address'],
         phoneNumber: data['phone'],
-        personOfInterests: (data['personOfInterest'] as List)
-            .map((e) => PersonOfInterest.fromJson(e))
-            .toList(),
         isAdmin: data['isAdmin']);
   }
 
@@ -39,38 +34,37 @@ class User {
       'email': email,
       'address': address,
       'phone': phoneNumber,
-      'personOfInterest': personOfInterests.map((e) => e.toMap()).toList(),
       'isAdmin': isAdmin
     };
   }
 }
 
-class PersonOfInterest {
-  String workerId;
-  Timestamp addTime;
-  PersonOfInterest({
-    this.workerId,
-    this.addTime,
+class Interests {
+  String workerDocRef;
+  Timestamp addedOn;
+  Interests({
+    this.workerDocRef,
+    this.addedOn,
   });
 
   Map<String, dynamic> toMap() {
     return {
-      'workerId': workerId,
-      'addTime': addTime,
+      'workerDocRef': workerDocRef,
+      'addedOn': addedOn,
     };
   }
 
-  factory PersonOfInterest.fromMap(Map<String, dynamic> map) {
+  factory Interests.fromMap(Map<String, dynamic> map) {
     if (map == null) return null;
 
-    return PersonOfInterest(
-      workerId: map['workerId'],
-      addTime: map['addTime'],
+    return Interests(
+      workerDocRef: map['workerDocRef'],
+      addedOn: map['addedOn'],
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory PersonOfInterest.fromJson(String source) =>
-      PersonOfInterest.fromMap(json.decode(source));
+  factory Interests.fromJson(String source) =>
+      Interests.fromMap(json.decode(source));
 }

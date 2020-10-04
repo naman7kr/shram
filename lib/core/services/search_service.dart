@@ -6,10 +6,9 @@ import 'package:shram/core/models/categories.dart';
 import 'package:shram/core/services/services.dart';
 
 class SearchService extends Services {
-  List<DocumentSnapshot> documentList;
-  BehaviorSubject<List<DocumentSnapshot>> _searchNameController;
-  BehaviorSubject<List<DocumentSnapshot>> _searchPhoneController;
-  BehaviorSubject<List<DocumentSnapshot>> _searchAadharController;
+  List<DocumentSnapshot> _searchNameList = [];
+  List<DocumentSnapshot> _searchPhoneList = [];
+  List<DocumentSnapshot> _searchAadharList = [];
 
   void dispose() {
     // _searchAadharController.close();
@@ -17,22 +16,17 @@ class SearchService extends Services {
     // _searchPhoneController.close();
   }
 
-  SearchService() {
-    _searchNameController = BehaviorSubject<List<DocumentSnapshot>>();
-    _searchPhoneController = BehaviorSubject<List<DocumentSnapshot>>();
-    _searchAadharController = BehaviorSubject<List<DocumentSnapshot>>();
-  }
-  Stream<List<DocumentSnapshot>> get searchNameStream {
+  SearchService() {}
+  List<DocumentSnapshot> get searchNameList {
     print('GETTING STREAM');
-    return _searchNameController.stream;
+    return _searchNameList;
   }
 
-  Stream<List<DocumentSnapshot>> get searchPhoneStream =>
-      _searchPhoneController.stream;
-  Stream<List<DocumentSnapshot>> get searchAadharStream =>
-      _searchAadharController.stream;
+  List<DocumentSnapshot> get searchPhoneList => _searchPhoneList;
+  List<DocumentSnapshot> get searchAadharList => _searchAadharList;
 
-  Future<void> fetchFirstSearchName(String query, Categories cat) async {
+  Future<List<DocumentSnapshot>> fetchFirstSearchName(
+      String query, Categories cat) async {
     query = query.toLowerCase();
     var result = await workersRef
         .orderBy('id')
@@ -40,8 +34,8 @@ class SearchService extends Services {
         .where('searchName', arrayContains: query)
         .limit(integer.fetch_size)
         .get();
-    documentList = result.docs;
-    _searchNameController.sink.add(documentList);
+    _searchNameList = (result.docs);
+    return _searchNameList;
   }
 
   Future<List<DocumentSnapshot>> fetchNextSearchName(
@@ -51,15 +45,16 @@ class SearchService extends Services {
         .orderBy('id')
         .where('skillType', isEqualTo: cat.name)
         .where('searchName', arrayContains: query)
-        .startAfterDocument(documentList[documentList.length - 1])
+        .startAfterDocument(_searchNameList[_searchNameList.length - 1])
         .limit(integer.fetch_size)
         .get();
-    documentList.addAll(result.docs);
-    _searchNameController.sink.add(documentList);
-    return documentList;
+
+    _searchNameList.addAll(result.docs);
+    return _searchNameList;
   }
 
-  Future<void> fetchFirstSearchPhone(String query, Categories cat) async {
+  Future<List<DocumentSnapshot>> fetchFirstSearchPhone(
+      String query, Categories cat) async {
     query = query.toLowerCase();
     var result = await workersRef
         .orderBy('id')
@@ -67,9 +62,9 @@ class SearchService extends Services {
         .where('searchPhone', arrayContains: query)
         .limit(integer.fetch_size)
         .get();
-    documentList = result.docs;
-    _searchPhoneController.sink.add(documentList);
-    return documentList;
+
+    _searchPhoneList = result.docs;
+    return _searchPhoneList;
   }
 
   Future<List<DocumentSnapshot>> fetchNextSearchPhone(
@@ -79,15 +74,15 @@ class SearchService extends Services {
         .orderBy('id')
         .where('skillType', isEqualTo: cat.name)
         .where('searchPhone', arrayContains: query)
-        .startAfterDocument(documentList[documentList.length - 1])
+        .startAfterDocument(_searchPhoneList[_searchPhoneList.length - 1])
         .limit(integer.fetch_size)
         .get();
-    documentList.addAll(result.docs);
-    _searchPhoneController.sink.add(documentList);
-    return documentList;
+
+    _searchPhoneList.addAll(result.docs);
+    return _searchPhoneList;
   }
 
-  Future<void> fetchFirstSearchAadhar(String query, Categories cat) async {
+  Future fetchFirstSearchAadhar(String query, Categories cat) async {
     query = query.toLowerCase();
     var result = await workersRef
         .orderBy('id')
@@ -95,9 +90,9 @@ class SearchService extends Services {
         .where('searchAadhar', arrayContains: query)
         .limit(integer.fetch_size)
         .get();
-    documentList = result.docs;
-    _searchAadharController.sink.add(documentList);
-    return documentList;
+
+    _searchAadharList = result.docs;
+    return _searchAadharList;
   }
 
   Future<List<DocumentSnapshot>> fetchNextSearchAadhar(
@@ -107,11 +102,10 @@ class SearchService extends Services {
         .orderBy('id')
         .where('skillType', isEqualTo: cat.name)
         .where('searchAadhar', arrayContains: query)
-        .startAfterDocument(documentList[documentList.length - 1])
+        .startAfterDocument(_searchAadharList[_searchAadharList.length - 1])
         .limit(integer.fetch_size)
         .get();
-    documentList.addAll(result.docs);
-    _searchAadharController.sink.add(documentList);
-    return documentList;
+    _searchAadharList.addAll(result.docs);
+    return _searchAadharList;
   }
 }
