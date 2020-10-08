@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart' as Auth;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shram/UI/screens/add_worker/add_single_screen.dart';
 import 'package:shram/UI/screens/search/search_screen.dart';
 import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/models/user.dart';
@@ -9,10 +10,14 @@ import 'package:shram/locator.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 
+import 'UI/screens/add_worker/add_multiple_worker_screen.dart';
+import 'UI/screens/add_worker/select_add_screen.dart';
 import 'UI/screens/home_screen.dart';
 import 'UI/screens/login_screen.dart';
 import 'UI/screens/registration_screen.dart';
 import 'UI/screens/splash_screen.dart';
+import 'UI/screens/support_screen.dart';
+import 'UI/screens/about_screen.dart';
 
 main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,7 +78,12 @@ class MyApp extends StatelessWidget {
           HomeScreen.routeName: (_) => HomeScreen(),
           LoginScreen.routeName: (_) => LoginScreen(),
           RegistrationScreen.routeName: (_) => RegistrationScreen(),
-          SearchScreen.routeName: (_) => SearchScreen()
+          SearchScreen.routeName: (_) => SearchScreen(),
+          SupportScreen.routeName: (_) => SupportScreen(),
+          AboutScreen.routeName: (_) => AboutScreen(),
+          SelectAddScreen.routeName: (_) => SelectAddScreen(),
+          AddSingle.routeName: (_) => AddSingle(),
+          AddMultipleScreen.routeName: (_) => AddMultipleScreen(),
         },
       ),
     );

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shram/UI/BaseView.dart';
 import 'package:shram/UI/tabs/categories/categories_grid.dart';
 import 'package:shram/UI/utilities/constants.dart';
+import 'package:shram/UI/utilities/resources.dart';
+import 'package:shram/UI/widgets/Background.dart';
 import 'package:shram/UI/widgets/connection_error.dart';
 import 'package:shram/core/enums/result.dart';
 import 'package:shram/core/models/categories.dart';
@@ -77,21 +79,26 @@ class _CategoriesTabState extends State<CategoriesTab> {
     // return ConnectionError(
     //   onReload: () {},
     // );
-    if (_isConnectionError) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ConnectionError(onReload: _loadCategories),
-        ],
-      );
-    } else {
-      return _isLoading
-          ? Center(
-              child: CircularProgressIndicator(),
-            )
-          : BaseView<CategoriesModal>(
-              onModelReady: (model) => model,
-              builder: (ctx, model, child) => CategoriesGrid(model));
-    }
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: Background(
+        imageLocation: string.default_background,
+        child: _isConnectionError
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ConnectionError(onReload: _loadCategories),
+                ],
+              )
+            : _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : BaseView<CategoriesModal>(
+                    onModelReady: (model) => model,
+                    builder: (ctx, model, child) => CategoriesGrid(model)),
+      ),
+    );
   }
 }

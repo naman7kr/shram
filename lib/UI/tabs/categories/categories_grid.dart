@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shram/UI/tabs/categories/CategoryItem.dart';
+import 'package:shram/UI/utilities/constants.dart';
 import 'package:shram/UI/utilities/resources.dart';
 import 'package:shram/core/models/categories.dart';
 import 'package:shram/core/viewmodel/categories_modal.dart';
@@ -26,7 +27,12 @@ class CategoriesGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // get the data
-
+    var skilledCategories = model.getSkilledCategories();
+    var unskilledCategories = model.getUnSkilledCategories();
+    Constants.skilledCategories.clear();
+    Constants.unskilledCategories.clear();
+    Constants.skilledCategories.addAll(skilledCategories);
+    Constants.unskilledCategories.addAll(unskilledCategories);
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -41,7 +47,7 @@ class CategoriesGrid extends StatelessWidget {
               ),
             ),
             //grid unskilled
-            buildGrids(model.getUnSkilledCategories()),
+            buildGrids(skilledCategories),
 
             Container(
               alignment: Alignment.topLeft,
@@ -52,7 +58,7 @@ class CategoriesGrid extends StatelessWidget {
               ),
             ),
             //grid skilled
-            buildGrids(model.getSkilledCategories()),
+            buildGrids(unskilledCategories),
           ],
         ),
       ),

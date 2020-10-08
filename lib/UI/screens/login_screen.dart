@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(left: 10),
                                 child: Text(
-                                  'Sign in with Google',
+                                  'Log in with Google',
                                   style: TextStyle(
                                     fontSize: 20,
                                     color: Colors.grey,

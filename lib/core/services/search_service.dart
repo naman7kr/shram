@@ -18,7 +18,7 @@ class SearchService extends Services {
 
   SearchService() {}
   List<DocumentSnapshot> get searchNameList {
-    print('GETTING STREAM');
+    // print('GETTING STREAM');
     return _searchNameList;
   }
 
@@ -29,12 +29,14 @@ class SearchService extends Services {
       String query, Categories cat) async {
     query = query.toLowerCase();
     var result = await workersRef
-        .orderBy('id')
+        .orderBy('name')
         .where('skillType', isEqualTo: cat.name)
         .where('searchName', arrayContains: query)
         .limit(integer.fetch_size)
         .get();
-    _searchNameList = (result.docs);
+
+    // print(result.docs[0].data());
+    _searchNameList = result.docs;
     return _searchNameList;
   }
 
@@ -42,7 +44,7 @@ class SearchService extends Services {
       String query, Categories cat) async {
     query = query.toLowerCase();
     var result = await workersRef
-        .orderBy('id')
+        .orderBy('name')
         .where('skillType', isEqualTo: cat.name)
         .where('searchName', arrayContains: query)
         .startAfterDocument(_searchNameList[_searchNameList.length - 1])
@@ -57,7 +59,7 @@ class SearchService extends Services {
       String query, Categories cat) async {
     query = query.toLowerCase();
     var result = await workersRef
-        .orderBy('id')
+        .orderBy('phoneNumber')
         .where('skillType', isEqualTo: cat.name)
         .where('searchPhone', arrayContains: query)
         .limit(integer.fetch_size)
@@ -71,7 +73,7 @@ class SearchService extends Services {
       String query, Categories cat) async {
     query = query.toLowerCase();
     var result = await workersRef
-        .orderBy('id')
+        .orderBy('phoneNumber')
         .where('skillType', isEqualTo: cat.name)
         .where('searchPhone', arrayContains: query)
         .startAfterDocument(_searchPhoneList[_searchPhoneList.length - 1])
@@ -85,7 +87,7 @@ class SearchService extends Services {
   Future fetchFirstSearchAadhar(String query, Categories cat) async {
     query = query.toLowerCase();
     var result = await workersRef
-        .orderBy('id')
+        .orderBy('aadhar')
         .where('skillType', isEqualTo: cat.name)
         .where('searchAadhar', arrayContains: query)
         .limit(integer.fetch_size)
@@ -99,7 +101,7 @@ class SearchService extends Services {
       String query, Categories cat) async {
     query = query.toLowerCase();
     var result = await workersRef
-        .orderBy('id')
+        .orderBy('aadhar')
         .where('skillType', isEqualTo: cat.name)
         .where('searchAadhar', arrayContains: query)
         .startAfterDocument(_searchAadharList[_searchAadharList.length - 1])

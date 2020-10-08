@@ -28,7 +28,6 @@ class Services {
       _firestore.collection('Counters').doc('workerCounter');
   DocumentReference _userCounterRef =
       _firestore.collection('Counters').doc('userCounter');
-    
 
   final String userCounterUrl = Server.server_url + 'Counters/userCounter';
   final String userCollectionUrl = Server.server_url + 'Users';
@@ -60,7 +59,7 @@ class Services {
     try {
       await firestore
           .runTransaction((tx) {})
-          .timeout(Duration(seconds: integer.fetch_timeout));
+          .timeout(Duration(seconds: integer.internet_timeout));
       return true;
     } on PlatformException catch (_) {
       return false;

@@ -14,7 +14,8 @@ import 'package:http/http.dart' as http;
 class AuthenticationService extends Services {
   bool isLoggedIn = false;
   final GoogleSignIn googleSignIn = GoogleSignIn();
-  UserType userType;
+  UserType _userType;
+  User user;
   StreamController<Auth.User> fireBaseUserStream =
       StreamController<Auth.User>();
   StreamController<bool> isUserLoggedInStream = StreamController<bool>();
@@ -23,7 +24,16 @@ class AuthenticationService extends Services {
   AuthenticationService() {
     // firestore.clearPersistence();
     _isLoggedInUser().then((value) => isLoggedIn = value);
-    _userType().then((value) => userType = value);
+    userType().then((value) => _userType = value);
+    getUser().then((value) => this.user = value);
+  }
+
+  User get userInfo {
+    return this.user;
+  }
+
+  UserType get getUserType {
+    return _userType;
   }
 
   Future signInWithGoogle() async {
@@ -77,6 +87,8 @@ class AuthenticationService extends Services {
 
   void _saveRegisteredUser(User user) {
     sharedPreferencesHelper.setUserDetails(json.encode(user.toMap()));
+    sharedPreferencesHelper
+        .setUserType(user.isAdmin ? UserType.ADMIN : UserType.USER);
   }
 
   Future<bool> checkIsRegisteredFromCache() async {
@@ -89,24 +101,24 @@ class AuthenticationService extends Services {
 
   Future<ResultType> isRegistered() async {
     // await sharedPreferencesHelper.setUserDetails('');
-    String userData = await sharedPreferencesHelper.getUserDetails();
-    if (userData.isEmpty && firebaseUser != null) {
-      // check if user is registered in firebase
-      try {
-        var doc = await userCollectionRef
-            .doc(firebaseUser.uid)
-            .get()
-            .timeout(Duration(seconds: integer.fetch_timeout));
-        if (!doc.exists) {
-          return ResultType.UNSUCCESSFUL;
-        }
-        _saveRegisteredUser(User.fromMap(doc.data()));
-        return ResultType.SUCCESSFUL;
-      } catch (err) {
-        print(err);
+    // String userData = await sharedPreferencesHelper.getUserDetails();
+
+    // check if user is registered in firebase
+    try {
+      var doc = await userCollectionRef
+          .doc(Auth.FirebaseAuth.instance.currentUser.uid)
+          .get()
+          .timeout(Duration(seconds: integer.fetch_timeout));
+      if (!doc.exists) {
+        return ResultType.UNSUCCESSFUL;
       }
-      // save registered user
+      _saveRegisteredUser(User.fromMap(doc.data()));
+      // print(doc.data());
+      return ResultType.SUCCESSFUL;
+    } catch (err) {
+      print(err);
     }
+    // save registered user
     return ResultType.SUCCESSFUL;
   }
 
@@ -118,10 +130,21 @@ class AuthenticationService extends Services {
     return isLoggedIn;
   }
 
-  Future<UserType> _userType() async {
-    userType = await sharedPreferencesHelper.getUserType();
-    userTypeStream.add(userType);
-    return userType;
+  Future<UserType> userType() async {
+    _userType = await sharedPreferencesHelper.getUserType();
+    if (_userType == UserType.UNKNOWN) {
+      String details = await sharedPreferencesHelper.getUserDetails();
+      User user = User.fromMap(json.decode(details));
+      _userType = UserTypeHelper.getEnum(user.isAdmin ? 'ADMIN' : 'USER');
+      await sharedPreferencesHelper.setUserType(_userType);
+    }
+    userTypeStream.add(_userType);
+    return _userType;
+  }
+
+  Future<User> getUser() async {
+    String details = await sharedPreferencesHelper.getUserDetails();
+    return User.fromMap(json.decode(details));
   }
 
   Future<void> signOutGoogle() async {

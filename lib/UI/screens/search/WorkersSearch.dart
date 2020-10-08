@@ -29,7 +29,6 @@ class WorkersSearch extends MySearchDelegate<Worker> {
 
   void _onSuggestionTap(String suggestion, BuildContext context) async {
     query = suggestion;
-    await getSuggestions();
     _searchResult(query, ListTypeHelper.getEnum(_selectedOption));
     // _searchService.dispose();
     close(context, null);

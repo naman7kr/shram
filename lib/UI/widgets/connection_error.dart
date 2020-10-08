@@ -22,7 +22,6 @@ class ConnectionError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      alignment: Alignment.center,
       width: double.infinity,
       child: Center(
         child: Column(

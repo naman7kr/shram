@@ -33,12 +33,13 @@ class integer {
   static const snackbar_duration = 2;
 
   // search
-  static const suggestions_limit = 4;
+  static const suggestions_limit = 15;
 
   // fetch list size
   static const fetch_size = 10;
 
   // timeouts
-  static const fetch_timeout = 3;
+  static const fetch_timeout = 6;
   static const update_timeout = 5;
+  static const internet_timeout = 3;
 }

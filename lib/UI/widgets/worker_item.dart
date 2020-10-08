@@ -1,16 +1,35 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/models/worker.dart';
+import 'package:shram/core/services/authentication_service.dart';
+import 'package:shram/core/services/workers_service.dart';
+import 'package:shram/locator.dart';
+import 'package:shram/UI/utilities/resources.dart';
+import 'package:url_launcher/url_launcher.dart' as UrlLauncher;
 
 class WorkerItem extends StatefulWidget {
-  final DocumentSnapshot workerDocument;
+  final Worker worker;
+  final String workerDocId;
   final bool isSelecting;
   final bool isSelected;
-  final Function removeFavourite;
   final Function addFavourite;
-  WorkerItem(this.workerDocument, this.isSelecting, this.isSelected,
-      this.removeFavourite, this.addFavourite);
+  final Function removeFavourite;
+
+  final bool isFavouriteList;
+
+  const WorkerItem(
+      {Key key,
+      this.worker,
+      this.workerDocId,
+      this.isSelecting,
+      this.isSelected,
+      this.addFavourite,
+      this.removeFavourite,
+      this.isFavouriteList})
+      : super(key: key);
 
   @override
   _WorkerItemState createState() => _WorkerItemState();
@@ -18,19 +37,41 @@ class WorkerItem extends StatefulWidget {
 
 class _WorkerItemState extends State<WorkerItem> {
   bool _isExpanded = false;
-  Worker worker;
-  bool isFavourite = false;
+  bool _isFavourite = false;
+  bool _isFirstTime = true;
+  bool _isUpdating = false;
+  AuthenticationService _authService;
   @override
   void initState() {
-    _isExpanded = false;
-    worker = Worker.fromJson(widget.workerDocument.data());
-    isFavourite =
-        worker.usersInterested.contains(FirebaseAuth.instance.currentUser.uid);
     super.initState();
+    _authService = locator<AuthenticationService>();
+  }
+
+  initializeValues() {
+    if (widget.worker.usersInterested == null) {
+      _isFavourite = false;
+    } else {
+      _isFavourite = widget.worker.usersInterested
+          .contains(FirebaseAuth.instance.currentUser.uid);
+    }
+  }
+
+  void removeFavourite({String content = 'Removed from favourites'}) {
+    widget.removeFavourite(widget.worker, widget.workerDocId, content);
+  }
+
+  void addFavourite({String content = 'Added to favourites'}) {
+    widget.addFavourite(widget.worker, widget.workerDocId, content);
   }
 
   @override
   Widget build(BuildContext context) {
+    // worker = Worker.fromJson(widget.workerDocument.data());
+    print('Hello');
+    initializeValues();
+    UserType userType = _authService.getUserType;
+    // print('WTF:' + worker.name);
+
     return GestureDetector(
       onTap: widget.isSelecting
           ? null
@@ -54,7 +95,7 @@ class _WorkerItemState extends State<WorkerItem> {
                   children: [
                     CircleAvatar(
                       child: Text(
-                        worker.name[0].toUpperCase(),
+                        widget.worker.name[0].toUpperCase(),
                         style: Theme.of(context).textTheme.headline2,
                       ),
                     ),
@@ -62,29 +103,41 @@ class _WorkerItemState extends State<WorkerItem> {
                         child: Container(
                       margin: EdgeInsets.symmetric(horizontal: 15),
                       child: Text(
-                        worker.name,
+                        widget.worker.name,
                         style: Theme.of(context).textTheme.bodyText2,
                       ),
                     )),
-                    Container(
-                        margin: EdgeInsets.only(right: 10),
-                        child: InkWell(
-                          onTap: widget.isSelecting
-                              ? null
-                              : () {
-                                  if (isFavourite) {
-                                    widget
-                                        .removeFavourite(widget.workerDocument);
-                                  } else {
-                                    widget.addFavourite(widget.workerDocument);
-                                  }
-                                },
-                          child: Icon(
-                              isFavourite ? Icons.star : Icons.star_border),
-                        )),
+                    widget.isFavouriteList
+                        ? Container()
+                        : Container(
+                            margin: EdgeInsets.only(right: 10),
+                            child: InkWell(
+                              onTap: widget.isSelecting || _isUpdating
+                                  ? null
+                                  : () {
+                                      if (_isFavourite) {
+                                        removeFavourite();
+                                      } else {
+                                        addFavourite();
+                                      }
+                                    },
+                              child: Icon(_isFavourite
+                                  ? Icons.star
+                                  : Icons.star_border),
+                            )),
                     InkWell(
-                      onTap: widget.isSelecting ? null : () {},
-                      child: Icon(Icons.edit),
+                      onTap: widget.isSelecting
+                          ? null
+                          : () {
+                              if (widget.isFavouriteList) {
+                                removeFavourite();
+                              }
+                            },
+                      child: widget.isFavouriteList
+                          ? Icon(Icons.delete)
+                          : userType == UserType.USER
+                              ? Container()
+                              : Icon(Icons.edit),
                     )
                   ],
                 ),
@@ -94,7 +147,7 @@ class _WorkerItemState extends State<WorkerItem> {
                       child: Container(
                         margin: EdgeInsets.only(left: 55),
                         alignment: Alignment.centerLeft,
-                        child: Text(worker.skillType),
+                        child: Text(widget.worker.skillType),
                       ),
                     ),
                     Container(
@@ -123,7 +176,7 @@ class _WorkerItemState extends State<WorkerItem> {
                           Expanded(
                             child: Container(
                               margin: EdgeInsets.only(left: 8),
-                              child: Text(worker.phoneNumber),
+                              child: Text(widget.worker.phoneNumber),
                             ),
                           ),
                           IconButton(
@@ -131,7 +184,17 @@ class _WorkerItemState extends State<WorkerItem> {
                               Icons.phone,
                               color: Theme.of(context).accentColor,
                             ),
-                            onPressed: widget.isSelecting ? null : () {},
+                            onPressed: widget.isSelecting
+                                ? null
+                                : () async {
+                                    try {
+                                      await UrlLauncher.launch('tel://' +
+                                          '+91' +
+                                          widget.worker.phoneNumber);
+                                    } catch (err) {
+                                      print(err);
+                                    }
+                                  },
                           )
                         ],
                       ),
@@ -142,7 +205,7 @@ class _WorkerItemState extends State<WorkerItem> {
                             flex: 7,
                             child: Container(
                               margin: EdgeInsets.only(left: 8),
-                              child: Text(worker.address),
+                              child: Text(widget.worker.address),
                             ),
                           ),
                           Expanded(
@@ -162,7 +225,9 @@ class _WorkerItemState extends State<WorkerItem> {
                               flex: 7,
                               child: Container(
                                 margin: EdgeInsets.only(left: 8),
-                                child: Text(worker.aadhar),
+                                child: Text(widget.worker.aadhar == null
+                                    ? ''
+                                    : widget.worker.aadhar),
                               ),
                             ),
                             Expanded(

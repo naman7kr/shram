@@ -1,4 +1,5 @@
 import 'package:shram/core/enums/result.dart';
+import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/enums/view_state.dart';
 import 'package:shram/core/models/user.dart';
 import 'package:shram/core/services/authentication_service.dart';
@@ -29,7 +30,15 @@ class LoginPageModel extends BaseModel {
   }
 
   Future<bool> checkInternetConnection() async {
-    return _authenticationService.checkInternetConnection();
+    return await _authenticationService.checkInternetConnection();
+  }
+
+  Future<UserType> getUserType() async {
+    return _authenticationService.userType();
+  }
+
+  User getUser() {
+    return _authenticationService.userInfo;
   }
 
   void signOut() {

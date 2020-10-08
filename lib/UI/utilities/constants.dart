@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shram/core/models/worker.dart';
 import 'package:shram/core/models/categories.dart';
 
@@ -18,6 +19,9 @@ class Constants {
     }
     return Color(int.parse(hexColor, radix: 16));
   }
+
+  static List<Categories> unskilledCategories = [];
+  static List<Categories> skilledCategories = [];
 
   static List<Worker> getWorkers(Categories cat) {
     List<Worker> workers = [];

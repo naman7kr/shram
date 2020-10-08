@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Worker {
@@ -11,7 +13,7 @@ class Worker {
   List<String> searchName = [];
   List<String> searchPhone = [];
   List<String> searchAadhar = [];
-  List<Timestamp> usersInterested = [];
+  List<String> usersInterested = [];
 
   Worker(
       {this.id,
@@ -28,17 +30,17 @@ class Worker {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': this.id,
-      'name': this.name,
-      'phoneNumber': this.phoneNumber,
-      'aadhar': this.aadhar,
-      'address': this.address,
-      'isSkilled': this.isSkilled,
-      'skillType': this.skillType,
-      'searchName': this.searchName,
-      'searchPhone': this.searchPhone,
-      'searchAadhar': this.searchAadhar,
-      'usersInterested': this.usersInterested.map((e) => {'uid': e}).toList()
+      'id': id,
+      'name': name,
+      'phoneNumber': phoneNumber,
+      'aadhar': aadhar,
+      'address': address,
+      'isSkilled': isSkilled,
+      'skillType': skillType,
+      'searchName': searchName,
+      'searchPhone': searchPhone,
+      'searchAadhar': searchAadhar,
+      'usersInterested': usersInterested?.map((x) => {'uid': x})?.toList(),
     };
   }
 
@@ -51,7 +53,13 @@ class Worker {
         address: data['address'],
         isSkilled: data['isSkilled'],
         skillType: data['skillType'],
-        usersInterested:
-            (data['usersInterested'] as List).map((e) => e['uid']).toList());
+        usersInterested: (data['usersInterested'] as List<dynamic>)
+            ?.map((e) => e.toString())
+            ?.toList());
+  }
+
+  @override
+  String toString() {
+    return 'Worker(id: $id, name: $name, phoneNumber: $phoneNumber, aadhar: $aadhar, address: $address, isSkilled: $isSkilled, skillType: $skillType, searchName: $searchName, searchPhone: $searchPhone, searchAadhar: $searchAadhar, usersInterested: $usersInterested)';
   }
 }
