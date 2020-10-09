@@ -12,13 +12,13 @@ import 'package:shram/core/services/services.dart';
 class WorkersService extends Services {
   List<DocumentSnapshot> workerDocList = [];
 
-  List<Map<String, Object>> favourites;
+  List<Map<String, Object>> favourites = [];
 
   WorkersService() {
     // firestore.enablePersistence().catchError((err) => print(err));
   }
 
-  Future addWorker(Worker worker) async {
+  Future addWorker(Worker worker, {String docId = ''}) async {
     return firestore.runTransaction((tx) async {
       // check if phone number or aadhar already exists...
       var existingWorkerBasedOnPhone = await workersRef
@@ -30,17 +30,43 @@ class WorkersService extends Services {
       if (existingWorkerBasedOnPhone.size != 0 ||
           existingWorkerBasedOnAadhar.size != 0) {
         //throw worker exists exception
-        print('YO');
+        // print('YO');
         throw ServiceException('Worker already exists');
       } else {
         // proceed to adding worker
-        DocumentSnapshot counterDoc = await workersCounterRef.get();
-        if (counterDoc.exists) {
-          worker.id = 'W${counterDoc.data()['count']}';
-          await workersRef.doc().set(worker.toMap());
-        } else {
-          print('No counter doc exists in db');
+        //add search heads
+        worker.searchName = [];
+        worker.searchPhone = [];
+        worker.searchAadhar = [];
+        for (int i = 1; i < worker.name.length + 1; i++) {
+          worker.searchName.add(worker.name.substring(0, i).toLowerCase());
         }
+        for (int i = 1; i < worker.phoneNumber.length + 1; i++) {
+          worker.searchPhone
+              .add(worker.phoneNumber.substring(0, i).toLowerCase());
+        }
+        for (int i = 1; i < worker.aadhar.length + 1; i++) {
+          worker.searchAadhar.add(worker.aadhar.substring(0, i).toLowerCase());
+        }
+        // get auto generated id
+
+        if (worker.id == null || worker.id.isEmpty) {
+          DocumentSnapshot counterDoc = await workersCounterRef.get();
+
+          if (counterDoc.exists) {
+            worker.id = 'W${counterDoc.data()['count']}';
+            await workersCounterRef.update({'count': FieldValue.increment(1)});
+          } else {
+            print('No counter doc exists in db');
+          }
+        } else {
+          print(worker.id);
+        }
+        // add worker
+        if (docId.isEmpty)
+          await workersRef.doc().set(worker.toMap());
+        else
+          await workersRef.doc(docId).set(worker.toMap());
       }
     });
   }
@@ -67,6 +93,10 @@ class WorkersService extends Services {
       print(err);
       return ResultType.ERROR;
     }
+  }
+
+  Future updateWorker(String docId, Worker worker) async {
+    return await workersRef.doc(docId).update(worker.toMap());
   }
 
   Future<ResultType> getAllWorkers() async {
@@ -124,8 +154,12 @@ class WorkersService extends Services {
           var resultWorker =
               await workersRef.doc(personOfInterest.workerDocRef).get();
           // print(resultWorker.data());
-          resultList.add(
-              {'addedOn': personOfInterest.addedOn, 'workerDoc': resultWorker});
+          if (resultWorker.exists) {
+            resultList.add({
+              'addedOn': personOfInterest.addedOn,
+              'workerDoc': resultWorker
+            });
+          }
         }
 
         favourites = resultList;
@@ -139,7 +173,7 @@ class WorkersService extends Services {
   }
 
   Future<Worker> removeFavourite(Worker worker, String id) async {
-    firestore.runTransaction((transaction) async {
+    return firestore.runTransaction((transaction) async {
       var documents = await userCollectionRef
           .doc(FirebaseAuth.instance.currentUser.uid)
           .collection('Favourites')
@@ -154,12 +188,12 @@ class WorkersService extends Services {
       await workersRef.doc(id).update({'usersInterested': uids});
 
       worker.usersInterested = uids;
+      return worker;
     });
-    return worker;
   }
 
   Future<Worker> addFavourite(Worker worker, String id) async {
-    firestore.runTransaction((transaction) async {
+    return firestore.runTransaction((transaction) async {
       Timestamp addTime = Timestamp.now();
       Interests interests = new Interests(workerDocRef: id, addedOn: addTime);
       List<String> uids = worker.usersInterested;
@@ -172,14 +206,31 @@ class WorkersService extends Services {
           .doc(FirebaseAuth.instance.currentUser.uid)
           .collection('Favourites')
           .add(interests.toMap());
+
       await workersRef.doc(id).update({'usersInterested': uids});
       worker.usersInterested = uids;
+
       DocumentSnapshot resultWorker = await workersRef.doc(id).get();
+      if (favourites == null) favourites = [];
       favourites.add({'addedOn': addTime, 'workerDoc': resultWorker});
+      // print('LOL');
+
+      return worker;
     });
-    return worker;
   }
 
+  Future removeWorker(String docId, Worker worker) async {
+    return firestore.runTransaction((transaction) async {
+      Map<String, dynamic> deletedMap = worker.toMap();
+      deletedMap.putIfAbsent('deletedOn', () => Timestamp.now());
+      await deletedRef.add(deletedMap);
+
+      var docToBeDeleted = await workersRef.doc(docId).get();
+      if (docToBeDeleted.exists) {
+        docToBeDeleted.reference.delete();
+      }
+    }).timeout(Duration(seconds: integer.remove_timeout));
+  }
   // Future addMultipleFavourites(List<DocumentSnapshot> workerDocuments) async {
   //   firestore.runTransaction((transaction) async {
   //     workerDocuments.forEach((document) {

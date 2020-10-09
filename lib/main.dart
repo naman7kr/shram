@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shram/UI/screens/add_worker/add_single_screen.dart';
 import 'package:shram/UI/screens/search/search_screen.dart';
+import 'package:shram/core/enums/result.dart';
 import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/models/user.dart';
 import 'package:shram/core/services/authentication_service.dart';
@@ -15,18 +16,58 @@ import 'UI/screens/add_worker/select_add_screen.dart';
 import 'UI/screens/home_screen.dart';
 import 'UI/screens/login_screen.dart';
 import 'UI/screens/registration_screen.dart';
-import 'UI/screens/splash_screen.dart';
+
 import 'UI/screens/support_screen.dart';
 import 'UI/screens/about_screen.dart';
 
 main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  // get home page
   setupLocator();
-  runApp(MyApp());
+
+  Widget home = await getHomePage();
+  runApp(MyApp(home));
+}
+
+Future<Widget> getHomePage() async {
+  final authenticationService = locator<AuthenticationService>();
+  bool isLoggedIn = false;
+  try {
+    isLoggedIn = await authenticationService.isLoggedInUser();
+  } catch (err) {
+    return Future<Widget>.delayed(Duration(seconds: 2), () {
+      return LoginScreen();
+    });
+  }
+  if (!isLoggedIn) {
+    // Timer(Duration(seconds: 2), () {
+    //   // print('Hello');
+    //   _checkIfLoggedIn();
+    // });
+    return Future<Widget>.delayed(Duration(seconds: 2), () {
+      return LoginScreen();
+    });
+  }
+  if (await authenticationService.checkInternetConnection()) {
+    ResultType isRegisteredResult = await authenticationService.isRegistered();
+    if (isRegisteredResult == ResultType.SUCCESSFUL) {
+      return HomeScreen();
+    } else {
+      return RegistrationScreen();
+    }
+  } else {
+    if (await authenticationService.checkIsRegisteredFromCache()) {
+      return HomeScreen();
+    } else {
+      return LoginScreen();
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {
+  final Widget home;
+  MyApp(this.home);
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -73,8 +114,8 @@ class MyApp extends StatelessWidget {
               bodyText2: TextStyle(color: Colors.black, fontSize: 14)),
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
+        home: home,
         routes: {
-          '/': (_) => SplashScreen(),
           HomeScreen.routeName: (_) => HomeScreen(),
           LoginScreen.routeName: (_) => LoginScreen(),
           RegistrationScreen.routeName: (_) => RegistrationScreen(),

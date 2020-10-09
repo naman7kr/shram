@@ -69,6 +69,8 @@ class _SearchScreenState extends State<SearchScreen> {
   void didChangeDependencies() {
     if (isFirstTime) {
       isFirstTime = false;
+      _searchService = locator<SearchService>();
+      _workersService = locator<WorkersService>();
       _loadInitialData();
 
       _multiSelectController.disableEditingWhenNoneSelected = true;
@@ -81,13 +83,13 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       _isLoading = true;
     });
-    _searchService = locator<SearchService>();
-    _workersService = locator<WorkersService>();
+
     try {
       displayList =
           await _workersService.fetchFirstWorkersListBasedOnCategory(cat);
       displayWorkerList =
           displayList.map((doc) => Worker.fromJson(doc.data())).toList();
+
       setState(() {
         _isLoading = false;
       });
@@ -174,6 +176,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void callback() {
+    _loadInitialData();
     setState(() {});
   }
 
@@ -301,7 +304,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   AppBar buildAppBar(BuildContext context) {
     return AppBar(
-        title: Text('Search'),
+        title: Text(cat.name),
         leading: !_multiSelectController.isSelecting
             ? IconButton(
                 icon: Icon(Icons.arrow_back, color: Colors.white),
@@ -340,32 +343,3 @@ class _SearchScreenState extends State<SearchScreen> {
               ]);
   }
 }
-
-// Widget _buildWorkersListWidget() {
-//   // print(displayList[0].data()['name']);
-//   return ListView.builder(
-//       itemCount: displayList.length,
-//       physics: NeverScrollableScrollPhysics(),
-//       shrinkWrap: true,
-//       itemBuilder: (_, i) => MultiSelectItem(
-//             isSelecting: _multiSelectController.isSelecting,
-//             onSelected: () {
-//               setState(() {
-//                 _multiSelectController.toggle(i);
-//               });
-//             },
-//             child: Container(
-//               decoration: _multiSelectController.isSelected(i)
-//                   ? BoxDecoration(color: Colors.grey[300])
-//                   : BoxDecoration(),
-//               child: WorkerItem(
-//                   displayWorkerList[i],
-//                   displayList[i].id,
-//                   _multiSelectController.isSelecting,
-//                   _multiSelectController.isSelected(i),
-//                   _scaffoldKey,
-//                   addFavourite,
-//                   removeFavourite),
-//             ),
-//           ));
-// }

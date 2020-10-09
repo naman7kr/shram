@@ -22,11 +22,14 @@ class WorkersPageModel extends BaseModel {
     try {
       await _workersService.addWorker(worker);
     } on ServiceException catch (exp) {
-      
       throw exp;
     } catch (err) {
       throw err;
     }
+  }
+
+  Future updateWorker(String docId, Worker worker) {
+    return _workersService.updateWorker(docId, worker);
   }
 
   Future<List<Map<String, Object>>> fetchFavourites() async {

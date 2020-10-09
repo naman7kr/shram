@@ -17,6 +17,8 @@ class WorkerItem extends StatefulWidget {
   final bool isSelected;
   final Function addFavourite;
   final Function removeFavourite;
+  final Function removeWorker;
+  final Function updateWorker;
 
   final bool isFavouriteList;
 
@@ -28,6 +30,8 @@ class WorkerItem extends StatefulWidget {
       this.isSelected,
       this.addFavourite,
       this.removeFavourite,
+      this.removeWorker,
+      this.updateWorker,
       this.isFavouriteList})
       : super(key: key);
 
@@ -38,7 +42,7 @@ class WorkerItem extends StatefulWidget {
 class _WorkerItemState extends State<WorkerItem> {
   bool _isExpanded = false;
   bool _isFavourite = false;
-  bool _isFirstTime = true;
+
   bool _isUpdating = false;
   AuthenticationService _authService;
   @override
@@ -62,6 +66,10 @@ class _WorkerItemState extends State<WorkerItem> {
 
   void addFavourite({String content = 'Added to favourites'}) {
     widget.addFavourite(widget.worker, widget.workerDocId, content);
+  }
+
+  void removeWorker() {
+    widget.removeWorker(widget.workerDocId, widget.worker);
   }
 
   @override
@@ -125,19 +133,40 @@ class _WorkerItemState extends State<WorkerItem> {
                                   ? Icons.star
                                   : Icons.star_border),
                             )),
-                    InkWell(
-                      onTap: widget.isSelecting
-                          ? null
-                          : () {
-                              if (widget.isFavouriteList) {
-                                removeFavourite();
-                              }
-                            },
-                      child: widget.isFavouriteList
-                          ? Icon(Icons.delete)
-                          : userType == UserType.USER
-                              ? Container()
-                              : Icon(Icons.edit),
+                    Container(
+                      margin: EdgeInsets.only(left: 5),
+                      child: InkWell(
+                        onTap: widget.isSelecting
+                            ? null
+                            : () {
+                                if (widget.isFavouriteList) {
+                                  removeFavourite();
+                                } else {
+                                  widget.updateWorker(
+                                      widget.workerDocId, widget.worker);
+                                }
+                              },
+                        child: widget.isFavouriteList
+                            ? Icon(Icons.delete)
+                            : userType == UserType.USER
+                                ? Container()
+                                : Icon(Icons.edit),
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(left: 5),
+                      child: InkWell(
+                        onTap: widget.isSelecting
+                            ? null
+                            : () {
+                                removeWorker();
+                              },
+                        child: widget.isFavouriteList
+                            ? Container()
+                            : userType == UserType.USER
+                                ? Container()
+                                : Icon(Icons.delete),
+                      ),
                     )
                   ],
                 ),

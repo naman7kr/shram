@@ -44,7 +44,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   
-  
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -61,8 +61,8 @@ flutter:
     - assets/images/login_background.png
     - assets/images/google_logo.png
     - assets/images/default_background.jpeg
-    - assets/images/login_background.jpeg
     - assets/images/no_internet.png
+    - assets/images/logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

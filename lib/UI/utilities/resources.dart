@@ -20,6 +20,7 @@ class string {
   // image assets
   static const default_background = 'assets/images/default_background.jpeg';
   static const no_internet = 'assets/images/no_internet.png';
+  static const splash_background = "assets/images/splash_screen.jpg";
 
   // internet error
   static const internet_error_title = 'Whoops!';
@@ -42,4 +43,5 @@ class integer {
   static const fetch_timeout = 6;
   static const update_timeout = 5;
   static const internet_timeout = 3;
+  static const remove_timeout = 3;
 }

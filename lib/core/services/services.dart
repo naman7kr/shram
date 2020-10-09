@@ -24,6 +24,8 @@ class Services {
   CollectionReference _userCollectionRef = _firestore.collection('Users');
   CollectionReference _workersRef = _firestore.collection('Workers');
   CollectionReference _categoriesRef = _firestore.collection('Categories');
+  CollectionReference _deletedWorkerRef = _firestore.collection('Deleted');
+
   DocumentReference _workerCounterRef =
       _firestore.collection('Counters').doc('workerCounter');
   DocumentReference _userCounterRef =
@@ -49,6 +51,7 @@ class Services {
   CollectionReference get userCollectionRef => _userCollectionRef;
   CollectionReference get workersRef => _workersRef;
   CollectionReference get categoriesRef => _categoriesRef;
+  CollectionReference get deletedRef => _deletedWorkerRef;
   DocumentReference get workersCounterRef => _workerCounterRef;
   DocumentReference get userCounterRef => _userCounterRef;
   getFirebaseUser() {

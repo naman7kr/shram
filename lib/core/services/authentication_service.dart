@@ -9,7 +9,6 @@ import 'package:shram/core/enums/result.dart';
 import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/models/user.dart';
 import 'package:shram/core/services/services.dart';
-import 'package:http/http.dart' as http;
 
 class AuthenticationService extends Services {
   bool isLoggedIn = false;
@@ -23,9 +22,13 @@ class AuthenticationService extends Services {
 
   AuthenticationService() {
     // firestore.clearPersistence();
-    _isLoggedInUser().then((value) => isLoggedIn = value);
-    userType().then((value) => _userType = value);
-    getUser().then((value) => this.user = value);
+    try {
+      isLoggedInUser().then((value) => isLoggedIn = value);
+      userType().then((value) => _userType = value);
+      getUser().then((value) => this.user = value);
+    } catch (err) {
+      print('LOL');
+    }
   }
 
   User get userInfo {
@@ -122,7 +125,7 @@ class AuthenticationService extends Services {
     return ResultType.SUCCESSFUL;
   }
 
-  Future<bool> _isLoggedInUser() async {
+  Future<bool> isLoggedInUser() async {
     await getFirebaseUser();
     fireBaseUserStream.add(firebaseUser);
     isLoggedIn = firebaseUser == null ? false : true;
@@ -134,9 +137,12 @@ class AuthenticationService extends Services {
     _userType = await sharedPreferencesHelper.getUserType();
     if (_userType == UserType.UNKNOWN) {
       String details = await sharedPreferencesHelper.getUserDetails();
-      User user = User.fromMap(json.decode(details));
-      _userType = UserTypeHelper.getEnum(user.isAdmin ? 'ADMIN' : 'USER');
-      await sharedPreferencesHelper.setUserType(_userType);
+      if (details != null && details.isNotEmpty) {
+        // print(details);
+        User user = User.fromMap(json.decode(details));
+        _userType = UserTypeHelper.getEnum(user.isAdmin ? 'ADMIN' : 'USER');
+        await sharedPreferencesHelper.setUserType(_userType);
+      }
     }
     userTypeStream.add(_userType);
     return _userType;
@@ -144,6 +150,9 @@ class AuthenticationService extends Services {
 
   Future<User> getUser() async {
     String details = await sharedPreferencesHelper.getUserDetails();
+    if (details.isEmpty) {
+      return null;
+    }
     return User.fromMap(json.decode(details));
   }
 

@@ -27,14 +27,50 @@ class _AddSingleState extends State<AddSingle> {
 
   bool _isLoading = false;
   Worker _worker = Worker();
+  Worker oldWorker;
+  String docId;
+
   Categories selectedSkilled;
   Categories selectedUnskilled;
-
+  bool isFirstTime = true;
+  bool isUpdating = false;
   @override
   void initState() {
     selectedSkilled = Constants.skilledCategories[0];
     selectedUnskilled = Constants.unskilledCategories[0];
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    if (isFirstTime) {
+      isFirstTime = false;
+      var args =
+          ModalRoute.of(context).settings.arguments as Map<String, Object>;
+      // print(args);
+      if (args != null) {
+        print('LOL');
+        oldWorker = args['worker'];
+        docId = args['docId'];
+        print(oldWorker.searchAadhar);
+        _worker = Worker.clone(oldWorker);
+        print(_worker.searchAadhar);
+        print(_worker.toString());
+        initRadio = false;
+        isUpdating = true;
+        setState(() {
+          _selectedRadio = _worker.isSkilled ? 1 : 2;
+          if (_worker.isSkilled) {
+            selectedSkilled = Categories(
+                name: _worker.skillType, isSkilled: _worker.isSkilled);
+          } else {
+            selectedUnskilled = Categories(
+                name: _worker.skillType, isSkilled: _worker.isSkilled);
+          }
+        });
+      }
+    }
+    super.didChangeDependencies();
   }
 
   @override
@@ -120,6 +156,15 @@ class _AddSingleState extends State<AddSingle> {
         _worker.skillType = selectedUnskilled.name;
       }
       _form.currentState.save();
+      print(_worker.name);
+      if (isUpdating && _worker.isEqualTo(oldWorker)) {
+        _scaffoldKey.currentState.hideCurrentSnackBar();
+        _scaffoldKey.currentState.showSnackBar(SnackBar(
+          content: Text('No changes were made'),
+          duration: Duration(seconds: integer.snackbar_duration),
+        ));
+        return;
+      }
       print(_worker.toString());
 
       setState(() {
@@ -127,14 +172,19 @@ class _AddSingleState extends State<AddSingle> {
       });
       try {
         if (await model.checkInternetConnection()) {
-          print('WTH');
-          await model.addWorker(_worker);
-
-          setState(() {
-            _isLoading = false;
-          });
-
-          Navigator.of(context).pop('Success');
+          if (isUpdating) {
+            await model.updateWorker(docId, _worker);
+            setState(() {
+              _isLoading = false;
+            });
+            Navigator.of(context).pop('Add');
+          } else {
+            await model.addWorker(_worker);
+            setState(() {
+              _isLoading = false;
+            });
+            Navigator.of(context).pop('Add');
+          }
         } else {
           // handle no internet
           _scaffoldKey.currentState.showSnackBar(SnackBar(
@@ -162,7 +212,7 @@ class _AddSingleState extends State<AddSingle> {
         setState(() {
           _isLoading = false;
         });
-        print('WTH END');
+        // print('WTH END');
       }
     }
   }
@@ -195,7 +245,7 @@ class _AddSingleState extends State<AddSingle> {
           key: _scaffoldKey,
           appBar: AppBar(
             title: Text(
-              'Add Worker',
+              '${isUpdating ? 'Update' : 'Add'} Worker',
               style: Theme.of(context).textTheme.headline1,
             ),
             actions: [
@@ -238,6 +288,7 @@ class _AddSingleState extends State<AddSingle> {
                                 child: ListView(
                                   children: [
                                     TextFormField(
+                                      initialValue: _worker.name,
                                       decoration:
                                           InputDecoration(labelText: 'Name'),
                                       textInputAction: TextInputAction.next,
@@ -265,6 +316,7 @@ class _AddSingleState extends State<AddSingle> {
                                         ),
                                         Expanded(
                                           child: TextFormField(
+                                            initialValue: _worker.phoneNumber,
                                             focusNode: _phoneFocus,
                                             keyboardType: TextInputType.number,
                                             decoration: InputDecoration(
@@ -358,6 +410,7 @@ class _AddSingleState extends State<AddSingle> {
                                       ],
                                     ),
                                     TextFormField(
+                                      initialValue: _worker.aadhar,
                                       keyboardType: TextInputType.phone,
                                       decoration: InputDecoration(
                                           labelText: 'Aadhar Number'),
@@ -379,6 +432,7 @@ class _AddSingleState extends State<AddSingle> {
                                     ),
                                     TextFormField(
                                       // focusNode: _addressFocus,
+                                      initialValue: _worker.address,
                                       keyboardType: TextInputType.multiline,
                                       focusNode: _addressFocus,
 

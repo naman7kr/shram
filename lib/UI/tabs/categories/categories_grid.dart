@@ -47,7 +47,7 @@ class CategoriesGrid extends StatelessWidget {
               ),
             ),
             //grid unskilled
-            buildGrids(skilledCategories),
+            buildGrids(unskilledCategories),
 
             Container(
               alignment: Alignment.topLeft,
@@ -58,7 +58,7 @@ class CategoriesGrid extends StatelessWidget {
               ),
             ),
             //grid skilled
-            buildGrids(unskilledCategories),
+            buildGrids(skilledCategories),
           ],
         ),
       ),

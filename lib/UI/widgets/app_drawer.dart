@@ -27,6 +27,7 @@ class _AppDrawerState extends State<AppDrawer> {
     if (_isFirstTime) {
       _isFirstTime = false;
       _authenticationService = locator<AuthenticationService>();
+      init();
     }
     super.didChangeDependencies();
   }
@@ -41,7 +42,7 @@ class _AppDrawerState extends State<AppDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    init();
+    // init();
     // UserType type = Provider.of<UserType>(context);
     return BaseView<LoginPageModel>(
       onModelReady: (model) => model,
@@ -117,6 +118,7 @@ class _AppDrawerState extends State<AppDrawer> {
                   style: TextStyle(color: Colors.black),
                 ),
                 onTap: () {
+                  Navigator.pop(context);
                   model.signOut();
                   Navigator.of(context).pushNamedAndRemoveUntil(
                       LoginScreen.routeName, (route) => false);

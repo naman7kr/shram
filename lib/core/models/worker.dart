@@ -27,6 +27,33 @@ class Worker {
       this.searchPhone,
       this.searchAadhar,
       this.usersInterested});
+  Worker.clone(Worker w)
+      : this(
+            id: w.id,
+            name: w.name,
+            phoneNumber: w.phoneNumber,
+            aadhar: w.aadhar,
+            address: w.address,
+            isSkilled: w.isSkilled,
+            skillType: w.skillType,
+            searchName: w.searchName,
+            searchPhone: w.searchPhone,
+            searchAadhar: w.searchAadhar,
+            usersInterested: w.usersInterested);
+
+  bool isEqualTo(Worker worker) {
+    if (worker.id.compareTo(this.id) == 0 &&
+        worker.name.compareTo(this.name) == 0 &&
+        worker.phoneNumber.compareTo(this.phoneNumber) == 0 &&
+        worker.aadhar.compareTo(this.aadhar) == 0 &&
+        worker.address.compareTo(this.address) == 0 &&
+        worker.skillType.compareTo(this.skillType) == 0 &&
+        worker.isSkilled == this.isSkilled) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -53,6 +80,15 @@ class Worker {
         address: data['address'],
         isSkilled: data['isSkilled'],
         skillType: data['skillType'],
+        searchName: (data['searchName'] as List<dynamic>)
+            ?.map((e) => e.toString())
+            ?.toList(),
+        searchPhone: (data['searchPhone'] as List<dynamic>)
+            ?.map((e) => e.toString())
+            ?.toList(),
+        searchAadhar: (data['searchAadhar'] as List<dynamic>)
+            ?.map((e) => e.toString())
+            ?.toList(),
         usersInterested: (data['usersInterested'] as List<dynamic>)
             ?.map((e) => e.toString())
             ?.toList());
