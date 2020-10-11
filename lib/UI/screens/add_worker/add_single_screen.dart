@@ -49,7 +49,7 @@ class _AddSingleState extends State<AddSingle> {
           ModalRoute.of(context).settings.arguments as Map<String, Object>;
       // print(args);
       if (args != null) {
-        print('LOL');
+        // print('LOL');
         oldWorker = args['worker'];
         docId = args['docId'];
         print(oldWorker.searchAadhar);
@@ -319,6 +319,7 @@ class _AddSingleState extends State<AddSingle> {
                                             initialValue: _worker.phoneNumber,
                                             focusNode: _phoneFocus,
                                             keyboardType: TextInputType.number,
+                                            maxLength: 10,
                                             decoration: InputDecoration(
                                                 labelText: 'Phone Number'),
                                             textInputAction:
@@ -412,6 +413,7 @@ class _AddSingleState extends State<AddSingle> {
                                     TextFormField(
                                       initialValue: _worker.aadhar,
                                       keyboardType: TextInputType.phone,
+                                      maxLength: 12,
                                       decoration: InputDecoration(
                                           labelText: 'Aadhar Number'),
                                       textInputAction: TextInputAction.next,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shram/UI/screens/add_worker/select_add_screen.dart';
+import 'package:shram/UI/utilities/resources.dart';
 import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/models/user.dart';
 import 'package:shram/core/services/authentication_service.dart';
@@ -61,7 +62,7 @@ class _AppDrawerState extends State<AppDrawer> {
               ),
               Divider(),
               ListTile(
-                leading: Icon(Icons.shop),
+                leading: Icon(Icons.home),
                 title: Text(
                   'Home',
                   style: TextStyle(color: Colors.black),
@@ -74,7 +75,7 @@ class _AppDrawerState extends State<AppDrawer> {
               Divider(),
               if (isAdmin) ...[
                 ListTile(
-                  leading: Icon(Icons.shop),
+                  leading: Icon(Icons.add_box),
                   title: Text(
                     'Add Worker',
                     style: TextStyle(color: Colors.black),
@@ -88,7 +89,7 @@ class _AppDrawerState extends State<AppDrawer> {
                 Divider(),
               ],
               ListTile(
-                leading: Icon(Icons.shop),
+                leading: Icon(Icons.support),
                 title: Text(
                   'Support',
                   style: TextStyle(color: Colors.black),
@@ -100,7 +101,7 @@ class _AppDrawerState extends State<AppDrawer> {
               ),
               Divider(),
               ListTile(
-                leading: Icon(Icons.edit),
+                leading: Icon(Icons.info),
                 title: Text(
                   'About',
                   style: TextStyle(color: Colors.black),
@@ -112,14 +113,21 @@ class _AppDrawerState extends State<AppDrawer> {
               ),
               Divider(),
               ListTile(
-                leading: Icon(Icons.edit),
+                leading: Icon(Icons.logout),
                 title: Text(
                   'Log Out',
                   style: TextStyle(color: Colors.black),
                 ),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
-                  model.signOut();
+                  try {
+                    await model.signOut();
+                  } catch (err) {
+                    Scaffold.of(context).showSnackBar(SnackBar(
+                      content: Text('Error signing out'),
+                      duration: Duration(seconds: integer.snackbar_duration),
+                    ));
+                  }
                   Navigator.of(context).pushNamedAndRemoveUntil(
                       LoginScreen.routeName, (route) => false);
                 },

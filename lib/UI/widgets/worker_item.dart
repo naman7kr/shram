@@ -15,6 +15,7 @@ class WorkerItem extends StatefulWidget {
   final String workerDocId;
   final bool isSelecting;
   final bool isSelected;
+  final UserType userType;
   final Function addFavourite;
   final Function removeFavourite;
   final Function removeWorker;
@@ -32,6 +33,7 @@ class WorkerItem extends StatefulWidget {
       this.removeFavourite,
       this.removeWorker,
       this.updateWorker,
+      this.userType,
       this.isFavouriteList})
       : super(key: key);
 
@@ -44,14 +46,13 @@ class _WorkerItemState extends State<WorkerItem> {
   bool _isFavourite = false;
 
   bool _isUpdating = false;
-  AuthenticationService _authService;
+
   @override
   void initState() {
     super.initState();
-    _authService = locator<AuthenticationService>();
   }
 
-  initializeValues() {
+  Future initializeValues() async {
     if (widget.worker.usersInterested == null) {
       _isFavourite = false;
     } else {
@@ -77,7 +78,7 @@ class _WorkerItemState extends State<WorkerItem> {
     // worker = Worker.fromJson(widget.workerDocument.data());
     print('Hello');
     initializeValues();
-    UserType userType = _authService.getUserType;
+    print(widget.userType);
     // print('WTF:' + worker.name);
 
     return GestureDetector(
@@ -108,66 +109,77 @@ class _WorkerItemState extends State<WorkerItem> {
                       ),
                     ),
                     Expanded(
+                        flex: 3,
                         child: Container(
-                      margin: EdgeInsets.symmetric(horizontal: 15),
-                      child: Text(
-                        widget.worker.name,
-                        style: Theme.of(context).textTheme.bodyText2,
-                      ),
-                    )),
-                    widget.isFavouriteList
-                        ? Container()
-                        : Container(
-                            margin: EdgeInsets.only(right: 10),
-                            child: InkWell(
-                              onTap: widget.isSelecting || _isUpdating
-                                  ? null
-                                  : () {
-                                      if (_isFavourite) {
-                                        removeFavourite();
-                                      } else {
-                                        addFavourite();
-                                      }
-                                    },
-                              child: Icon(_isFavourite
-                                  ? Icons.star
-                                  : Icons.star_border),
-                            )),
-                    Container(
-                      margin: EdgeInsets.only(left: 5),
-                      child: InkWell(
-                        onTap: widget.isSelecting
-                            ? null
-                            : () {
-                                if (widget.isFavouriteList) {
-                                  removeFavourite();
-                                } else {
-                                  widget.updateWorker(
-                                      widget.workerDocId, widget.worker);
-                                }
-                              },
-                        child: widget.isFavouriteList
-                            ? Icon(Icons.delete)
-                            : userType == UserType.USER
+                          margin: EdgeInsets.symmetric(horizontal: 15),
+                          child: Text(
+                            widget.worker.name,
+                            style: Theme.of(context).textTheme.bodyText2,
+                          ),
+                        )),
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        child: Row(
+                          mainAxisAlignment: widget.userType == UserType.USER
+                              ? MainAxisAlignment.end
+                              : MainAxisAlignment.spaceAround,
+                          children: [
+                            widget.isFavouriteList
                                 ? Container()
-                                : Icon(Icons.edit),
+                                : Container(
+                                    child: InkWell(
+                                    onTap: widget.isSelecting || _isUpdating
+                                        ? null
+                                        : () {
+                                            if (_isFavourite) {
+                                              removeFavourite();
+                                            } else {
+                                              addFavourite();
+                                            }
+                                          },
+                                    child: Icon(_isFavourite
+                                        ? Icons.star
+                                        : Icons.star_border),
+                                  )),
+                            Container(
+                              child: InkWell(
+                                onTap: widget.isSelecting
+                                    ? null
+                                    : () {
+                                        if (widget.isFavouriteList) {
+                                          removeFavourite();
+                                        } else {
+                                          widget.updateWorker(
+                                              widget.workerDocId,
+                                              widget.worker);
+                                        }
+                                      },
+                                child: widget.isFavouriteList
+                                    ? Icon(Icons.delete)
+                                    : widget.userType == UserType.USER
+                                        ? Container()
+                                        : Icon(Icons.edit),
+                              ),
+                            ),
+                            Container(
+                              child: InkWell(
+                                onTap: widget.isSelecting
+                                    ? null
+                                    : () {
+                                        removeWorker();
+                                      },
+                                child: widget.isFavouriteList
+                                    ? Container()
+                                    : widget.userType == UserType.USER
+                                        ? Container()
+                                        : Icon(Icons.delete),
+                              ),
+                            )
+                          ],
+                        ),
                       ),
                     ),
-                    Container(
-                      margin: EdgeInsets.only(left: 5),
-                      child: InkWell(
-                        onTap: widget.isSelecting
-                            ? null
-                            : () {
-                                removeWorker();
-                              },
-                        child: widget.isFavouriteList
-                            ? Container()
-                            : userType == UserType.USER
-                                ? Container()
-                                : Icon(Icons.delete),
-                      ),
-                    )
                   ],
                 ),
                 Row(

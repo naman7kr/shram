@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shram/UI/screens/add_worker/add_single_screen.dart';
 import 'package:shram/UI/screens/search/search_screen.dart';
+import 'package:shram/UI/screens/verify_phone_screen.dart';
 import 'package:shram/core/enums/result.dart';
 import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/models/user.dart';
@@ -36,16 +37,12 @@ Future<Widget> getHomePage() async {
   try {
     isLoggedIn = await authenticationService.isLoggedInUser();
   } catch (err) {
-    return Future<Widget>.delayed(Duration(seconds: 2), () {
+    return Future<Widget>.delayed(Duration(seconds: 1), () {
       return LoginScreen();
     });
   }
   if (!isLoggedIn) {
-    // Timer(Duration(seconds: 2), () {
-    //   // print('Hello');
-    //   _checkIfLoggedIn();
-    // });
-    return Future<Widget>.delayed(Duration(seconds: 2), () {
+    return Future<Widget>.delayed(Duration(seconds: 1), () {
       return LoginScreen();
     });
   }
@@ -125,6 +122,7 @@ class MyApp extends StatelessWidget {
           SelectAddScreen.routeName: (_) => SelectAddScreen(),
           AddSingle.routeName: (_) => AddSingle(),
           AddMultipleScreen.routeName: (_) => AddMultipleScreen(),
+          VerifyPhoneScreen.routeName: (_) => VerifyPhoneScreen(),
         },
       ),
     );

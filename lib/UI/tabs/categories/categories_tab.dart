@@ -24,10 +24,6 @@ class _CategoriesTabState extends State<CategoriesTab> {
   bool _isConnectionError = false;
   @override
   void initState() {
-    // final _workersService = locator<WorkersService>();
-    // List<Worker> workers =
-    //     Constants.getWorkers(Categories(name: 'Carpenter', isSkilled: true));
-    // _workersService.addMultipleWorkers(workers);
     super.initState();
   }
 

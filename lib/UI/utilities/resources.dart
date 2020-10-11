@@ -21,12 +21,16 @@ class string {
   static const default_background = 'assets/images/default_background.jpeg';
   static const no_internet = 'assets/images/no_internet.png';
   static const splash_background = "assets/images/splash_screen.jpg";
+  static const image_placeholder = 'assets/images/logo.png';
+  static const phone_verification = 'assets/images/phone_verification.png';
+  static const csv_image = 'assets/images/csv.png';
 
   // internet error
   static const internet_error_title = 'Whoops!';
   static const internet_error_subtitle =
       'Check your internet connection and try again';
   static const internet_error_tryagain = 'Try Again';
+  // https://firebasestorage.googleapis.com/v0/b/shram-test-43fb3.appspot.com/o/cook.jpg?alt=media&token=https://firebasestorage.googleapis.com/v0/b/shram-test-43fb3.appspot.com/o/driver.jpg?alt=media&token=https://firebasestorage.googleapis.com/v0/b/shram-test-43fb3.appspot.com/o/driver.jpg?alt=media&token=9864678f-651c-406b-9bfd-f306bed1a4e7
 }
 
 class integer {
@@ -42,6 +46,6 @@ class integer {
   // timeouts
   static const fetch_timeout = 6;
   static const update_timeout = 5;
-  static const internet_timeout = 3;
+  static const internet_timeout = 5;
   static const remove_timeout = 3;
 }

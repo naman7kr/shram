@@ -1,7 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart' as Auth;
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:shram/UI/BaseView.dart';
 import 'package:shram/UI/screens/home_screen.dart';
+import 'package:shram/UI/screens/verify_phone_screen.dart';
 import 'package:shram/UI/utilities/resources.dart';
 import 'package:shram/UI/widgets/Background.dart';
 import 'package:shram/core/enums/result.dart';
@@ -21,9 +24,11 @@ class RegistrationScreen extends StatefulWidget {
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final _addressFocus = FocusNode();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-
   final _form = GlobalKey<FormState>();
+  final phoneController = TextEditingController();
+  bool isPhoneVerified = false;
   bool _isLoading = false;
+  bool _isFirstTime = true;
   var _user = User(
     userName: '',
     email: '',
@@ -36,17 +41,35 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     'address': '',
     'phoneNumber': ''
   };
+  @override
+  void dispose() {
+    _addressFocus.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
-    final authenticationService = locator<AuthenticationService>();
-    initialValues['email'] = authenticationService.firebaseUser.email;
+    if (_isFirstTime) {
+      _isFirstTime = false;
+      final authenticationService = locator<AuthenticationService>();
+      initialValues['email'] = authenticationService.firebaseUser.email;
+    }
     super.didChangeDependencies();
   }
 
   Future<void> _saveForm(LoginPageModel model) async {
     FocusScope.of(context).unfocus();
     var isValid = _form.currentState.validate();
+    if (!isPhoneVerified) {
+      Fluttertoast.showToast(
+          msg: "Please verify phone number",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.black54,
+          textColor: Colors.white,
+          fontSize: 16.0);
+      return;
+    }
     if (isValid) {
       _form.currentState.save();
       setState(() {
@@ -102,8 +125,117 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
   }
 
+  Future _verifyPhone(LoginPageModel model, String phoneNumber) async {
+    setState(() {
+      _isLoading = true;
+    });
+    FocusScope.of(context).unfocus();
+    if (phoneNumber.isEmpty) {
+      Fluttertoast.showToast(
+          msg: "Enter Phone Number",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.black54,
+          textColor: Colors.white,
+          fontSize: 16.0);
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+    if (phoneNumber.length != 10) {
+      Fluttertoast.showToast(
+          msg: "Invalid Phone Number",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.black54,
+          textColor: Colors.white,
+          fontSize: 16.0);
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    // check if phone number already exists
+    if (await model.checkInternetConnection()) {
+      try {
+        bool phoneCheckResult = await model.checkIfMobileExists(phoneNumber);
+        if (phoneCheckResult) {
+          Fluttertoast.showToast(
+              msg: "Phone number already registered",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: Colors.black54,
+              textColor: Colors.white,
+              fontSize: 16.0);
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+      } catch (err) {
+        print(err);
+        Fluttertoast.showToast(
+            msg: "Please try after some time",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Colors.black54,
+            textColor: Colors.white,
+            fontSize: 16.0);
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+    } else {
+      Fluttertoast.showToast(
+          msg: "Check your internet connection",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.black54,
+          textColor: Colors.white,
+          fontSize: 16.0);
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+    var existingPhone = Auth.FirebaseAuth.instance.currentUser.phoneNumber;
+    if (existingPhone.isNotEmpty &&
+        existingPhone.compareTo(phoneController.text) == 0) {
+      setState(() {
+        isPhoneVerified = true;
+        _isLoading = false;
+      });
+      Fluttertoast.showToast(
+          msg: "Phone number is already verified",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.black54,
+          textColor: Colors.white,
+          fontSize: 16.0);
+      return;
+    }
+    // check if auth phone is equal to provided number
+
+    var result = await Navigator.of(context)
+        .pushNamed(VerifyPhoneScreen.routeName, arguments: phoneNumber);
+    setState(() {
+      _isLoading = false;
+    });
+    if (result != null) {
+      setState(() {
+        isPhoneVerified = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext ctx) {
+    if (phoneController != null) {
+      // print('wtf');
+    }
     return BaseView<LoginPageModel>(
       onModelReady: (modal) => modal,
       builder: (context, modal, child) {
@@ -223,13 +355,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                         ),
                                         Expanded(
                                           child: TextFormField(
-                                            initialValue:
-                                                initialValues['phoneNumber'],
                                             keyboardType: TextInputType.number,
                                             decoration: InputDecoration(
                                                 labelText: 'Phone Number'),
                                             textInputAction:
                                                 TextInputAction.done,
+                                            controller: phoneController,
                                             validator: (value) {
                                               if (value.isEmpty) {
                                                 return 'Please Provide your Phone number';
@@ -250,10 +381,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                         SizedBox(
                                           width: 10,
                                         ),
-                                        RaisedButton(
-                                          onPressed: () {},
-                                          child: Text('Verify'),
-                                        )
+                                        isPhoneVerified
+                                            ? Icon(
+                                                Icons.verified,
+                                                color: Colors.greenAccent,
+                                              )
+                                            : RaisedButton(
+                                                onPressed: () {
+                                                  _verifyPhone(modal,
+                                                      phoneController.text);
+                                                },
+                                                child: Text('Verify'),
+                                              )
                                       ],
                                     )
                                   ],

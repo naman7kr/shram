@@ -14,8 +14,10 @@ import 'package:shram/UI/widgets/Background.dart';
 import 'package:shram/UI/widgets/connection_error.dart';
 import 'package:shram/core/enums/list_type.dart';
 import 'package:shram/core/enums/result.dart';
+import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/models/categories.dart';
 import 'package:shram/core/models/worker.dart';
+import 'package:shram/core/services/authentication_service.dart';
 import 'package:shram/core/services/search_service.dart';
 import 'package:shram/core/services/workers_service.dart';
 import 'package:shram/core/viewmodel/workers_page_model.dart';
@@ -36,6 +38,7 @@ class _SearchScreenState extends State<SearchScreen> {
   String query = '';
   ScrollController _scrollController = ScrollController();
   WorkersService _workersService;
+  AuthenticationService _authenticationService;
   SearchService _searchService;
   MultiSelectController _multiSelectController = new MultiSelectController();
   Categories cat;
@@ -43,6 +46,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Worker> displayWorkerList = [];
   bool isFirstTime = true;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  UserType userType;
 
   @override
   void dispose() {
@@ -71,6 +75,7 @@ class _SearchScreenState extends State<SearchScreen> {
       isFirstTime = false;
       _searchService = locator<SearchService>();
       _workersService = locator<WorkersService>();
+      _authenticationService = locator<AuthenticationService>();
       _loadInitialData();
 
       _multiSelectController.disableEditingWhenNoneSelected = true;
@@ -85,6 +90,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
+      userType = await _authenticationService.userType();
       displayList =
           await _workersService.fetchFirstWorkersListBasedOnCategory(cat);
       displayWorkerList =
@@ -228,6 +234,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                       _multiSelectController,
                                       _workerList,
                                       _workerDocId,
+                                      userType,
                                       _scaffoldKey,
                                       callback),
                                   // _buildWorkersListWidget(),

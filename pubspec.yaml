@@ -25,7 +25,7 @@ dependencies:
     sdk: flutter
   http: ^0.12.2
   get_it: ^5.0.1  
-  shared_preferences: ^0.5.10  
+  shared_preferences: ^0.5.6  
   provider: ^4.3.2+2
   google_sign_in: "^4.5.1"
   firebase_core: "^0.5.0"
@@ -33,6 +33,10 @@ dependencies:
   cloud_firestore: "^0.14.0+2"
   rxdart: ^0.24.1
   url_launcher: ^5.7.2
+  fluttertoast: ^7.1.1
+  pin_code_fields: ^5.2.0
+  file_picker: ^2.0.7
+  csv: ^4.0.3
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -63,7 +67,8 @@ flutter:
     - assets/images/default_background.jpeg
     - assets/images/no_internet.png
     - assets/images/logo.png
-
+    - assets/images/phone_verification.png
+    - assets/images/csv.png
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
 

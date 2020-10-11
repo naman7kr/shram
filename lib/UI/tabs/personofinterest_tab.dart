@@ -6,6 +6,7 @@ import 'package:shram/UI/utilities/resources.dart';
 import 'package:shram/UI/widgets/Background.dart';
 import 'package:shram/UI/widgets/connection_error.dart';
 import 'package:shram/UI/widgets/multi_select_list.dart';
+import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/models/worker.dart';
 import 'package:shram/core/services/workers_service.dart';
 import 'package:shram/core/viewmodel/workers_page_model.dart';
@@ -114,6 +115,7 @@ class _PersonOfInterestTabState extends State<PersonOfInterestTab> {
                             _multiSelectController,
                             _workerList,
                             _workerDocId,
+                            UserType.USER,
                             widget._scaffoldKey,
                             callback,
                             isFavouriteList: true,

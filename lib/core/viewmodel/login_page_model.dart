@@ -41,7 +41,11 @@ class LoginPageModel extends BaseModel {
     return _authenticationService.userInfo;
   }
 
-  void signOut() {
-    _authenticationService.signOutGoogle();
+  Future checkIfMobileExists(String phone) async {
+    return await _authenticationService.checkIfMobileAlreadyExists(phone);
+  }
+
+  Future signOut() async {
+    return await _authenticationService.signOutGoogle();
   }
 }

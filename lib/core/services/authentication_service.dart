@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as Auth;
+import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shram/UI/utilities/resources.dart';
 import 'package:shram/core/enums/result.dart';
@@ -65,6 +66,12 @@ class AuthenticationService extends Services {
 
       // print('signInWithGoogle succeeded: $user');
     }
+  }
+
+  Future<bool> checkIfMobileAlreadyExists(String phone) async {
+    var result = await userCollectionRef.where('phone', isEqualTo: phone).get();
+    if (result.size != 0) return true;
+    return false;
   }
 
   void _saveLogin(Auth.User user) {
@@ -156,8 +163,10 @@ class AuthenticationService extends Services {
     return User.fromMap(json.decode(details));
   }
 
-  Future<void> signOutGoogle() async {
+  Future signOutGoogle() async {
     await googleSignIn.signOut();
+    await Auth.FirebaseAuth.instance.signOut();
+
     isLoggedIn = false;
     isUserLoggedInStream.add(false);
     fireBaseUserStream.add(null);

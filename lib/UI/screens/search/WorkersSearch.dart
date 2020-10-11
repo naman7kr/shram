@@ -4,6 +4,7 @@ import 'package:shram/UI/BaseView.dart';
 import 'package:shram/UI/screens/search/suggestions.dart';
 import 'package:shram/UI/utilities/resources.dart';
 import 'package:shram/UI/utilities/search.dart';
+import 'package:shram/UI/widgets/Background.dart';
 import 'package:shram/core/enums/list_type.dart';
 import 'package:shram/core/enums/result.dart';
 import 'package:shram/core/models/categories.dart';
@@ -182,12 +183,19 @@ class WorkersSearch extends MySearchDelegate<Worker> {
                 // print(suggestions);
                 suggestions =
                     suggestions.take(integer.suggestions_limit).toList();
-                return Suggestions(
-                    suggestions,
-                    ListTypeHelper.getEnum(_selectedOption),
-                    _onSuggestionTap,
-                    _onSuggestionChangeQuery,
-                    context);
+                return Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: Background(
+                    imageLocation: string.default_background,
+                    child: Suggestions(
+                        suggestions,
+                        ListTypeHelper.getEnum(_selectedOption),
+                        _onSuggestionTap,
+                        _onSuggestionChangeQuery,
+                        context),
+                  ),
+                );
               } else {
                 return Center(
                   child: Text('No Suggestions available for the query'),
