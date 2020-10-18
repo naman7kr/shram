@@ -63,27 +63,27 @@ class _MultiSelectListState extends State<MultiSelectList> {
     _workersService = locator<WorkersService>();
   }
 
-  Future removeFavourite(Worker worker, String id, String content) async {
-    try {
-      Scaffold.of(context).hideCurrentSnackBar();
+  Future removeFavourite(Worker worker, String id, String content,
+      {fromDetailsPage = false}) async {
+    Scaffold.of(context).hideCurrentSnackBar();
 
-      Worker deletedWorker = worker;
-      String deletedId = id;
-      String firebaseUid = FirebaseAuth.instance.currentUser.uid;
-      var index = widget._workerList.indexWhere((w) => w.id == worker.id);
-      if (index >= 0 && index < widget._workerList.length) {
-        if (widget._workerList[index].usersInterested == null) {
-          widget._workerList[index].usersInterested = [];
-        }
-        widget._workerList[index].usersInterested
-            .removeWhere((uid) => uid.compareTo(firebaseUid) == 0);
-        if (widget.isFavouriteList) {
-          widget._workerList.removeAt(index);
-          widget._workerDocId.removeAt(index);
-        }
+    Worker deletedWorker = worker;
+    String deletedId = id;
+    String firebaseUid = FirebaseAuth.instance.currentUser.uid;
+    var index = widget._workerList.indexWhere((w) => w.id == worker.id);
+    if (index >= 0 && index < widget._workerList.length) {
+      if (widget._workerList[index].usersInterested == null) {
+        widget._workerList[index].usersInterested = [];
       }
-      setState(() {});
-
+      widget._workerList[index].usersInterested
+          .removeWhere((uid) => uid.compareTo(firebaseUid) == 0);
+      if (widget.isFavouriteList) {
+        widget._workerList.removeAt(index);
+        widget._workerDocId.removeAt(index);
+      }
+    }
+    setState(() {});
+    if (!fromDetailsPage) {
       if (await _workersService.checkInternetConnection()) {
         try {
           worker = await _workersService.removeFavourite(worker, id);
@@ -170,38 +170,37 @@ class _MultiSelectListState extends State<MultiSelectList> {
                   removeFavourite(deletedWorker, deletedId, content);
                 })));
       }
-    } catch (err) {}
+    }
   }
 
   Future addFavourite(Worker worker, String id, String content,
-      {pos = -1}) async {
-    try {
-      Scaffold.of(context).hideCurrentSnackBar();
-      String firebaseUid = FirebaseAuth.instance.currentUser.uid;
-      var index = widget._workerList.indexWhere((w) {
-        print(w.id);
-        print(worker.id);
-        return w.id.compareTo(worker.id) == 0;
-      });
+      {pos = -1, fromDetailsPage = false}) async {
+    Scaffold.of(context).hideCurrentSnackBar();
+    String firebaseUid = FirebaseAuth.instance.currentUser.uid;
+    var index = widget._workerList.indexWhere((w) {
+      print(w.id);
+      print(worker.id);
+      return w.id.compareTo(worker.id) == 0;
+    });
 
-      setState(() {
-        if (widget._workerList[index].usersInterested == null) {
-          widget._workerList[index].usersInterested = [];
-        }
-        print(widget._workerList[index].usersInterested.toString());
-        widget._workerList[index].usersInterested.add(firebaseUid);
-      });
-
-      if (pos != -1 && widget.isFavouriteList) {
-        setState(() {
-          widget._workerList.insert(pos, worker);
-          widget._workerDocId.insert(pos, id);
-        });
-        // print(
-        //     'Length After adding: ' + widget._workerList.length.toString());
-
+    setState(() {
+      if (widget._workerList[index].usersInterested == null) {
+        widget._workerList[index].usersInterested = [];
       }
+      print(widget._workerList[index].usersInterested.toString());
+      widget._workerList[index].usersInterested.add(firebaseUid);
+    });
 
+    if (pos != -1 && widget.isFavouriteList) {
+      setState(() {
+        widget._workerList.insert(pos, worker);
+        widget._workerDocId.insert(pos, id);
+      });
+      // print(
+      //     'Length After adding: ' + widget._workerList.length.toString());
+
+    }
+    if (!fromDetailsPage) {
       if (await _workersService.checkInternetConnection()) {
         try {
           // print('Length Before adding: ' + widget._workerList.length.toString());
@@ -279,8 +278,6 @@ class _MultiSelectListState extends State<MultiSelectList> {
         }
         setState(() {});
       }
-    } catch (err) {
-      print(err);
     }
   }
 

@@ -45,7 +45,6 @@ class WorkerItem extends StatefulWidget {
 }
 
 class _WorkerItemState extends State<WorkerItem> {
-  bool _isExpanded = false;
   bool _isFavourite = false;
 
   bool _isUpdating = false;
@@ -76,6 +75,32 @@ class _WorkerItemState extends State<WorkerItem> {
     widget.removeWorker(widget.workerDocId, widget.worker);
   }
 
+  void onItemTap() async {
+    var res = await Navigator.of(context)
+        .pushNamed(WorkerDetailsScreen.routeName, arguments: {
+      'isFavourite': _isFavourite,
+      'userType': widget.userType,
+      'worker': widget.worker,
+      'workerDocId': widget.workerDocId
+    });
+    if (res != null) {
+      var result = res as Map<String, Object>;
+      var fav = result['isFavourite'] as bool;
+      if (_isFavourite != fav) {
+        // print('Fav changed');
+        // toggle favourite
+        if (fav == true) {
+          //add favourite
+          widget.addFavourite(widget.worker, widget.workerDocId, '',
+              fromDetailsPage: true);
+        } else {
+          widget.removeFavourite(widget.worker, widget.workerDocId, '',
+              fromDetailsPage: true);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // worker = Worker.fromJson(widget.workerDocument.data());
@@ -85,8 +110,7 @@ class _WorkerItemState extends State<WorkerItem> {
     // print('WTF:' + worker.name);
 
     return GestureDetector(
-      onTap: () => Navigator.of(context)
-          .pushNamed(WorkerDetailsScreen.routeName, arguments: widget.worker),
+      onTap: onItemTap,
       // widget.isSelecting
       //     ? null
       //     : () {

@@ -139,11 +139,12 @@ class MyApp extends StatelessWidget {
           AddMultipleScreen.routeName: (_) => AddMultipleScreen(),
           VerifyPhoneScreen.routeName: (_) => VerifyPhoneScreen(),
           OverviewScreen.routeName: (_) => OverviewScreen(),
-          WorkerDetailsScreen.routeName: (_) => WorkerDetailsScreen(),
         },
         onGenerateRoute: (settings) {
           if (settings.name == WorkerDetailsScreen.routeName) {
             return PageRouteBuilder(
+                settings: settings,
+                transitionDuration: Duration(milliseconds: 500),
                 pageBuilder: (_, __, ___) => WorkerDetailsScreen());
           }
           return null;
