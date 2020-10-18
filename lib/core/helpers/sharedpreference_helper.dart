@@ -6,6 +6,7 @@ class SharedPreferenceHelper {
   final String _isLoggedIn = '_isLoggedIn';
   final String _userJsonModel = '_userJsonModel';
   final String _userType = '_userType';
+  final String _addressData = '_addressData';
 
   Future<bool> setLoggedInUserId(String id) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -45,6 +46,16 @@ class SharedPreferenceHelper {
   Future<UserType> getUserType() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return UserTypeHelper.getEnum(prefs.getString(_userType) ?? '');
+  }
+
+  Future<bool> setAddressData(String data) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setString(_addressData, data);
+  }
+
+  Future<String> getAddressData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_addressData) ?? '';
   }
 
   Future<bool> clearAllData() async {

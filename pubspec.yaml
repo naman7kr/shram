@@ -31,12 +31,15 @@ dependencies:
   firebase_core: "^0.5.0"
   firebase_auth: "^0.18.0+1"
   cloud_firestore: "^0.14.0+2"
+  firebase_storage: ^4.0.1
   rxdart: ^0.24.1
   url_launcher: ^5.7.2
   fluttertoast: ^7.1.1
   pin_code_fields: ^5.2.0
   file_picker: ^2.0.7
   csv: ^4.0.3
+  fl_chart: ^0.12.0
+  excel: ^1.1.5
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -69,6 +72,9 @@ flutter:
     - assets/images/logo.png
     - assets/images/phone_verification.png
     - assets/images/csv.png
+    - assets/images/male_dummy.png
+    - assets/images/female_dummy.jpg
+    - assets/images/others_dummy.png
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
 

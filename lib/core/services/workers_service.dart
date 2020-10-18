@@ -24,11 +24,8 @@ class WorkersService extends Services {
       var existingWorkerBasedOnPhone = await workersRef
           .where('phoneNumber', isEqualTo: worker.phoneNumber)
           .get();
-      var existingWorkerBasedOnAadhar =
-          await workersRef.where('aadhar', isEqualTo: worker.aadhar).get();
 
-      if (existingWorkerBasedOnPhone.size != 0 ||
-          existingWorkerBasedOnAadhar.size != 0) {
+      if (existingWorkerBasedOnPhone.size != 0) {
         //throw worker exists exception
         // print('YO');
         throw ServiceException('Worker already exists');
@@ -37,7 +34,7 @@ class WorkersService extends Services {
         //add search heads
         worker.searchName = [];
         worker.searchPhone = [];
-        worker.searchAadhar = [];
+
         for (int i = 1; i < worker.name.length + 1; i++) {
           worker.searchName.add(worker.name.substring(0, i).toLowerCase());
         }
@@ -45,28 +42,45 @@ class WorkersService extends Services {
           worker.searchPhone
               .add(worker.phoneNumber.substring(0, i).toLowerCase());
         }
-        for (int i = 1; i < worker.aadhar.length + 1; i++) {
-          worker.searchAadhar.add(worker.aadhar.substring(0, i).toLowerCase());
-        }
+
         // get auto generated id
 
         if (worker.id == null || worker.id.isEmpty) {
-          DocumentSnapshot counterDoc = await workersCounterRef.get();
+          DocumentSnapshot counterDoc = await workersIdCounterRef.get();
 
           if (counterDoc.exists) {
             worker.id = 'W${counterDoc.data()['count']}';
-            await workersCounterRef.update({'count': FieldValue.increment(1)});
+            await workersIdCounterRef
+                .update({'count': FieldValue.increment(1)});
           } else {
-            print('No counter doc exists in db');
+            worker.id = 'W1';
+            await workersIdCounterRef.set({'count': 2});
           }
         } else {
           print(worker.id);
         }
         // add worker
-        if (docId.isEmpty)
+        if (docId == null || docId.isEmpty)
           await workersRef.doc().set(worker.toMap());
         else
           await workersRef.doc(docId).set(worker.toMap());
+        // increment worker counter
+        var workerCountRes = await workersCounterRef.get();
+        if (workerCountRes.exists) {
+          await workersCounterRef.update({'count': FieldValue.increment(1)});
+        } else {
+          await workersCounterRef.set({'count': 1});
+        }
+
+        // increment category counter
+        var catCountRes = await categoryCounterRef.doc(worker.skillType).get();
+        if (catCountRes == null || !catCountRes.exists) {
+          await categoryCounterRef.doc(worker.skillType).set({'count': 1});
+        } else {
+          await categoryCounterRef
+              .doc(worker.skillType)
+              .update({'count': FieldValue.increment(1)});
+        }
       }
     });
   }
@@ -113,12 +127,24 @@ class WorkersService extends Services {
 
   Future<List<DocumentSnapshot>> fetchFirstWorkersListBasedOnCategory(
       Categories cat) async {
-    var result = await workersRef
-        .orderBy('name')
-        .where('skillType', isEqualTo: cat.name)
-        .limit(integer.fetch_size)
-        .get()
-        .timeout(Duration(seconds: integer.fetch_timeout));
+    bool isOther = false;
+    if (cat.name.compareTo('Others') == 0) isOther = true;
+    QuerySnapshot result;
+    if (isOther) {
+      result = await workersRef
+          .orderBy('name')
+          .where('isOther', isEqualTo: true)
+          .limit(integer.fetch_size)
+          .get()
+          .timeout(Duration(seconds: integer.fetch_timeout));
+    } else {
+      result = await workersRef
+          .orderBy('name')
+          .where('skillType', isEqualTo: cat.name.toLowerCase())
+          .limit(integer.fetch_size)
+          .get()
+          .timeout(Duration(seconds: integer.fetch_timeout));
+    }
     // print('lol');
     workerDocList = result.docs;
     return workerDocList;
@@ -126,12 +152,25 @@ class WorkersService extends Services {
 
   Future fetchNextWorkersList(Categories cat) async {
     // print('NEXT START');
-    var result = await workersRef
-        .orderBy('name')
-        .where('skillType', isEqualTo: cat.name)
-        .startAfterDocument(workerDocList[workerDocList.length - 1])
-        .limit(integer.fetch_size)
-        .get();
+    bool isOther = false;
+    if (cat.name.compareTo('Others') == 0) isOther = true;
+    QuerySnapshot result;
+    if (isOther) {
+      result = await workersRef
+          .orderBy('name')
+          .where('isOther', isEqualTo: true)
+          .startAfterDocument(workerDocList[workerDocList.length - 1])
+          .limit(integer.fetch_size)
+          .get()
+          .timeout(Duration(seconds: integer.fetch_timeout));
+    } else {
+      result = await workersRef
+          .orderBy('name')
+          .where('skillType', isEqualTo: cat.name)
+          .startAfterDocument(workerDocList[workerDocList.length - 1])
+          .limit(integer.fetch_size)
+          .get();
+    }
     // print('NEXT SUCCESS');
     workerDocList.addAll(result.docs);
     return workerDocList;
@@ -219,6 +258,43 @@ class WorkersService extends Services {
     });
   }
 
+  Future<Map<String, Object>> getOverviewData() {
+    return firestore.runTransaction<Map<String, Object>>((transaction) async {
+      var userCountResult = await userCounterRef.get();
+      var userCountValue;
+      var workerCountValue;
+      // get user counts
+      if (userCountResult.exists) {
+        userCountValue = userCountResult.data()['count'];
+      } else {
+        userCountValue = 0;
+      }
+
+      // get workers count
+      var workerCountResult = await workersCounterRef.get();
+      if (workerCountResult.exists) {
+        workerCountValue = workerCountResult.data()['count'];
+      } else {
+        workerCountValue = 0;
+      }
+
+      // get categories count
+      List<QueryDocumentSnapshot> categoryCountValues;
+      var categoryCountResult = await categoryCounterRef.get();
+      if (categoryCountResult != null) {
+        categoryCountValues = categoryCountResult.docs;
+      } else {
+        categoryCountValues = null;
+      }
+      Map<String, Object> result = {
+        'user': userCountValue,
+        'worker': workerCountValue,
+        'category': categoryCountValues
+      };
+      return result;
+    });
+  }
+
   Future removeWorker(String docId, Worker worker) async {
     return firestore.runTransaction((transaction) async {
       Map<String, dynamic> deletedMap = worker.toMap();
@@ -229,6 +305,13 @@ class WorkersService extends Services {
       if (docToBeDeleted.exists) {
         docToBeDeleted.reference.delete();
       }
+      // decrement worker counter
+      await workersCounterRef.update({'count': FieldValue.increment(-1)});
+      // decrement category counter
+
+      await categoryCounterRef
+          .doc(worker.skillType)
+          .update({'count': FieldValue.increment(-1)});
     }).timeout(Duration(seconds: integer.remove_timeout));
   }
   // Future addMultipleFavourites(List<DocumentSnapshot> workerDocuments) async {

@@ -1,4 +1,4 @@
-enum ListType { NAME, PHONE, AADHAR, NONE }
+enum ListType { NAME, PHONE, ADDRESS, NONE }
 
 class ListTypeHelper {
   static String getValue(ListType type) {
@@ -7,8 +7,8 @@ class ListTypeHelper {
         return "Name";
       case ListType.PHONE:
         return "Phone";
-      case ListType.AADHAR:
-        return 'Aadhar';
+      case ListType.ADDRESS:
+        return 'Address';
       default:
         return 'None';
     }
@@ -21,7 +21,7 @@ class ListTypeHelper {
       case 2:
         return ListType.PHONE;
       case 3:
-        return ListType.AADHAR;
+        return ListType.ADDRESS;
       default:
         return ListType.NONE;
     }

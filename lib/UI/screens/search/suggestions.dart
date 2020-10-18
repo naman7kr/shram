@@ -19,7 +19,6 @@ class Suggestions extends StatelessWidget {
   String getText(Worker w) {
     if (type == ListType.NAME) return w.name;
     if (type == ListType.PHONE) return w.phoneNumber;
-    if (type == ListType.AADHAR) return w.aadhar;
     return '';
   }
 

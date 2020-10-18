@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shram/UI/BaseView.dart';
 import 'package:shram/UI/tabs/categories/categories_grid.dart';
 import 'package:shram/UI/utilities/constants.dart';
@@ -8,6 +9,7 @@ import 'package:shram/UI/widgets/connection_error.dart';
 import 'package:shram/core/enums/result.dart';
 import 'package:shram/core/models/categories.dart';
 import 'package:shram/core/models/worker.dart';
+import 'package:shram/core/services/authentication_service.dart';
 import 'package:shram/core/services/categories_service.dart';
 import 'package:shram/core/services/workers_service.dart';
 import 'package:shram/core/viewmodel/categories_modal.dart';
@@ -36,7 +38,7 @@ class _CategoriesTabState extends State<CategoriesTab> {
     super.didChangeDependencies();
   }
 
-  void _loadCategories() {
+  Future _loadCategories() async {
     final _categoriesService = locator<CategoriesService>();
 
     setState(() {
@@ -44,30 +46,37 @@ class _CategoriesTabState extends State<CategoriesTab> {
       _isConnectionError = false;
     });
     // _categoriesService.addAllCategories();
+    if (await _categoriesService.checkInternetConnection()) {
+      try {
+        await _categoriesService.getAllCategories();
 
-    _categoriesService.getAllCategories().then((res) {
-      //   if (res == ResultType.SUCCESSFUL) {
-      // _categoriesService.categories.forEach((cat) async {
-
-      // print(workers.toString());
-      if (_categoriesService.categories.length != 0) {
-        setState(() {
-          _isLoading = false;
-        });
-      } else {
-        print('No Categories Found');
+        if (_categoriesService.categories.length != 0) {
+          setState(() {
+            _isLoading = false;
+          });
+        } else {
+          print('No Categories Found');
+        }
+      } catch (err) {
+        if (this.mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          Fluttertoast.showToast(
+              msg: 'Server Error. Please Try again later',
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: Colors.black54,
+              textColor: Colors.white,
+              fontSize: 16.0);
+        }
       }
-      // });
-      //   } else {
-      //     // error display snack bar
-      //     print('ERROR');
-      //   }
-    }).catchError((err) {
+    } else {
       setState(() {
         _isConnectionError = true;
         _isLoading = false;
       });
-    });
+    }
   }
 
   @override

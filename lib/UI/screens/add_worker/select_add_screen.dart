@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import 'package:shram/UI/screens/add_worker/add_single_screen.dart';
 import 'package:shram/UI/utilities/resources.dart';
@@ -32,12 +33,19 @@ class SelectAddScreen extends StatelessWidget {
                     if (result != null) {
                       // print(result);
                       // show a success snackbar
+                      Fluttertoast.showToast(
+                          msg: 'Uploaded Successfully',
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.BOTTOM,
+                          backgroundColor: Colors.black54,
+                          textColor: Colors.white,
+                          fontSize: 16.0);
                       try {
-                        _scaffoldKey.currentState.showSnackBar(SnackBar(
-                          content: Text('Successfully Added'),
-                          duration:
-                              Duration(seconds: integer.snackbar_duration),
-                        ));
+                        // _scaffoldKey.currentState.showSnackBar(SnackBar(
+                        //   content: Text('Successfully Added'),
+                        //   duration:
+                        //       Duration(seconds: integer.snackbar_duration),
+                        // ));
                       } catch (err) {
                         print(err);
                       }

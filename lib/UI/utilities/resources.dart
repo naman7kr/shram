@@ -24,13 +24,19 @@ class string {
   static const image_placeholder = 'assets/images/logo.png';
   static const phone_verification = 'assets/images/phone_verification.png';
   static const csv_image = 'assets/images/csv.png';
-
+  static const male_dummy = 'assets/images/male_dummy.png';
+  static const female_dummy = 'assets/images/female_dummy.jpg';
+  static const others_dummy = 'assets/images/others_dummy.png';
   // internet error
   static const internet_error_title = 'Whoops!';
   static const internet_error_subtitle =
       'Check your internet connection and try again';
   static const internet_error_tryagain = 'Try Again';
   // https://firebasestorage.googleapis.com/v0/b/shram-test-43fb3.appspot.com/o/cook.jpg?alt=media&token=https://firebasestorage.googleapis.com/v0/b/shram-test-43fb3.appspot.com/o/driver.jpg?alt=media&token=https://firebasestorage.googleapis.com/v0/b/shram-test-43fb3.appspot.com/o/driver.jpg?alt=media&token=9864678f-651c-406b-9bfd-f306bed1a4e7
+
+  //about
+  static const about =
+      "श्रम हज़ारीबाग ज़िला प्रशासन का ऑफिशियल एप्प जिसमे जिले के प्रवासी कामगारों को उनके घर मे ही रोजगार उपलब्ध कराने हेतु एक सकारात्मक कोशिश की गई है \n\n\n\nधन्यवाद\nजिला प्रशासन,\nहज़ारीबाग\n";
 }
 
 class integer {

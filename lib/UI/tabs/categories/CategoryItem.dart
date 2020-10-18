@@ -27,7 +27,7 @@ class CategoryItem extends StatelessWidget {
         child: Stack(
           children: [
             Container(
-              color: Colors.white,
+              color: Color.fromARGB(255, 211, 211, 211),
               width: double.infinity,
               height: double.infinity,
             ),
@@ -46,15 +46,16 @@ class CategoryItem extends StatelessWidget {
                       placeholder: AssetImage(string.image_placeholder),
                     )),
             ),
-            Container(
-              color: Color.fromARGB(120, 0, 0, 0),
-              width: double.infinity,
-              height: double.infinity,
-            ),
-            Center(
-              child: Text(
-                _categories.name,
-                style: TextStyle(color: Colors.white, fontSize: 16),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                height: 25,
+                alignment: Alignment.bottomCenter,
+                color: Color.fromARGB(255, 211, 211, 211),
+                child: Text(
+                  _categories.name,
+                  style: TextStyle(color: Colors.black, fontSize: 16),
+                ),
               ),
             ),
           ],

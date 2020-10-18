@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:multi_select_item/multi_select_item.dart';
 import 'package:shram/UI/BaseView.dart';
+import 'package:shram/UI/utilities/slide_top_route.dart';
+import 'package:shram/UI/widgets/bottom_sheet.dart';
 import 'package:shram/UI/widgets/multi_select_list.dart';
 import 'package:shram/UI/widgets/worker_item.dart';
 import 'package:shram/UI/screens/search/WorkersSearch.dart';
@@ -47,6 +49,7 @@ class _SearchScreenState extends State<SearchScreen> {
   bool isFirstTime = true;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   UserType userType;
+  Map<String, String> addressFilterData = {};
 
   @override
   void dispose() {
@@ -100,9 +103,10 @@ class _SearchScreenState extends State<SearchScreen> {
         _isLoading = false;
       });
     } catch (err) {
-      setState(() {
-        _isLoading = false;
-      });
+      if (this.mounted)
+        setState(() {
+          _isLoading = false;
+        });
     }
   }
 
@@ -124,8 +128,8 @@ class _SearchScreenState extends State<SearchScreen> {
           } else if (searchType == ListType.PHONE) {
             displayList = await _searchService.fetchNextSearchPhone(query, cat);
           } else {
-            displayList =
-                await _searchService.fetchNextSearchAadhar(query, cat);
+            displayList = await _searchService.fetchNextSearchAddress(
+                addressFilterData, cat);
           }
         }
         displayWorkerList =
@@ -177,7 +181,7 @@ class _SearchScreenState extends State<SearchScreen> {
     } else if (searchType == ListType.PHONE) {
       return _searchService.fetchFirstSearchPhone(query, cat);
     } else {
-      return _searchService.fetchFirstSearchAadhar(query, cat);
+      return Future.delayed(Duration(seconds: 0)).then((value) => []);
     }
   }
 
@@ -222,12 +226,31 @@ class _SearchScreenState extends State<SearchScreen> {
                                       : Container(
                                           alignment: Alignment.topLeft,
                                           margin: EdgeInsets.only(
-                                              left: 10, bottom: 20, top: 20),
-                                          child: Text(
-                                            'Search Result for $query',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .headline3,
+                                              left: 10,
+                                              bottom: 20,
+                                              top: 5,
+                                              right: 0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Search Result for $query',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .headline3,
+                                              ),
+                                              IconButton(
+                                                  icon: Icon(
+                                                    Icons.close,
+                                                    color: Colors.black,
+                                                  ),
+                                                  onPressed: () async {
+                                                    await _loadInitialData();
+                                                    query = '';
+                                                    setState(() {});
+                                                  }),
+                                            ],
                                           ),
                                         ),
                                   MultiSelectList(
@@ -344,9 +367,46 @@ class _SearchScreenState extends State<SearchScreen> {
               ]
             : [
                 IconButton(
+                  icon: Icon(Icons.room, color: Colors.white),
+                  onPressed: () => _showAddressFilterScreen(),
+                ),
+                IconButton(
                   onPressed: () => _search(context),
                   icon: Icon(Icons.search),
                 ),
               ]);
+  }
+
+  Future onAddressFilterSubmit(Map<String, String> data) async {
+    addressFilterData = data;
+    print(data);
+    // fetch first search with address filter
+    displayList = [];
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      displayList = await _searchService.fetchFirstSearchAddress(data, cat);
+      displayWorkerList =
+          displayList.map((doc) => Worker.fromJson(doc.data())).toList();
+      setState(() {
+        _isLoading = false;
+        _isLoadingNext = false;
+      });
+    } catch (err) {}
+    // set query and search type
+    query = '${data['block']} ${data['panchayat']} ${data['village']}';
+    searchType = ListType.ADDRESS;
+    setState(() {
+      _isLoading = false;
+      _isLoadingNext = false;
+    });
+  }
+
+  void _showAddressFilterScreen() {
+    Navigator.of(context).push(SlideTopRoute(
+        page: MyBottomSheet(
+      onSubmit: onAddressFilterSubmit,
+    )));
   }
 }

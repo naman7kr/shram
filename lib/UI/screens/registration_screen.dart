@@ -79,17 +79,19 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       try {
         if (await model.checkInternetConnection()) {
           await model.registerUser(_user);
+          setState(() {
+            _isLoading = false;
+          });
+          Fluttertoast.showToast(
+              msg: "Registration Successful",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: Colors.black54,
+              textColor: Colors.white,
+              fontSize: 16.0);
+          // navigate to home page
+          Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
           if (await model.isUserRegistered() == ResultType.SUCCESSFUL) {
-            setState(() {
-              _isLoading = false;
-            });
-            _scaffoldKey.currentState.hideCurrentSnackBar();
-            _scaffoldKey.currentState.showSnackBar(SnackBar(
-              content: Text(string.registered_successfully),
-              duration: Duration(seconds: integer.snackbar_duration),
-            ));
-            // navigate to home page
-            Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
           } else {
             setState(() {
               _isLoading = false;
@@ -202,8 +204,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       return;
     }
     var existingPhone = Auth.FirebaseAuth.instance.currentUser.phoneNumber;
-    if (existingPhone.isNotEmpty &&
-        existingPhone.compareTo(phoneController.text) == 0) {
+    if ((existingPhone != null) &&
+        ((existingPhone.isNotEmpty) &&
+            existingPhone.compareTo(phoneController.text) == 0)) {
       setState(() {
         isPhoneVerified = true;
         _isLoading = false;

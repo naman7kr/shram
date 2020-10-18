@@ -75,16 +75,6 @@ class WorkersSearch extends MySearchDelegate<Worker> {
                       },
                       title: Text('Phone'),
                     ),
-                    RadioListTile(
-                      value: 3,
-                      groupValue: _selectedOption,
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedOption = val;
-                        });
-                      },
-                      title: Text('Aadhar'),
-                    ),
                   ],
                 ),
               ),
@@ -98,10 +88,9 @@ class WorkersSearch extends MySearchDelegate<Worker> {
   @override
   List<Widget> buildActions(BuildContext context) {
     return [
-      RaisedButton(
+      IconButton(
+        icon: Icon(Icons.sort),
         onPressed: () => _showDialog(context),
-        child: Text(
-            ListTypeHelper.getValue(ListTypeHelper.getEnum(_selectedOption))),
       ),
       if (query.length != 0)
         IconButton(
@@ -142,9 +131,7 @@ class WorkersSearch extends MySearchDelegate<Worker> {
         case 2:
           await _searchService.fetchFirstSearchPhone(query.toLowerCase(), cat);
           return ResultType.SUCCESSFUL;
-        case 3:
-          await _searchService.fetchFirstSearchAadhar(query.toLowerCase(), cat);
-          return ResultType.SUCCESSFUL;
+
         default:
           return ResultType.UNSUCCESSFUL;
       }
@@ -160,8 +147,6 @@ class WorkersSearch extends MySearchDelegate<Worker> {
         return model.fetchFirstNameList(query, cat);
       case 2:
         return model.fetchFirstPhoneList(query, cat);
-      case 3:
-        return model.fetchNextAadharList(query, cat);
       default:
         return null;
     }

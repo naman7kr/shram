@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,7 +26,7 @@ class AddMultipleScreen extends StatefulWidget {
 
 class _AddMultipleScreenState extends State<AddMultipleScreen> {
   PlatformFile file;
-  List<List<dynamic>> csvTable;
+
   List<Worker> uploadableList = [];
   List<Map<String, Object>> errorList = [];
   bool _isProcessing = false;
@@ -34,26 +35,50 @@ class _AddMultipleScreenState extends State<AddMultipleScreen> {
   bool _isLoading = false;
   bool _isUploading = false;
   int uploadingPercentage = 0;
+  HashMap<String, Map<String, String>> phoneMap = HashMap();
+  HashMap<String, Map<String, String>> aadharMap = HashMap();
   bool _isUploadingComplete = false;
 
   List<Map<String, Object>> uploadErrorList = [];
-  Future _loadCSV() async {
+  Future _loadData() async {
+    errorList.clear();
+    uploadableList.clear();
+    phoneMap.clear();
+    aadharMap.clear();
     try {
       FilePickerResult result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['csv'],
+        allowedExtensions: ['csv', 'xlsx'],
       );
       if (result != null) {
         file = result.files.first;
         setState(() {});
-        final File csvFile = new File(file.path);
-        var data = await csvFile.readAsString();
-        csvTable = CsvToListConverter().convert(data);
-        print(csvTable.length);
-        setState(() {
-          _isProcessing = true;
-        });
-        processCSV(csvTable);
+        final File dataFile = new File(file.path);
+        if (file.extension.compareTo('csv') == 0) {
+          // csv file
+
+          var data = dataFile.readAsStringSync();
+          var csvTable = CsvToListConverter().convert(data);
+          print(csvTable.length);
+          setState(() {
+            _isProcessing = true;
+          });
+          for (var i = 1; i < csvTable.length; i++) {
+            var row = csvTable[i];
+            processData(row, i);
+          }
+        } else {
+          // xlsx file
+          var data = dataFile.readAsBytesSync();
+          var excelTable = Excel.decodeBytes(data);
+          for (var table in excelTable.tables.keys) {
+            for (int i = 1; i < excelTable.tables[table].rows.length; i++) {
+              var row = excelTable.tables[table].rows[i];
+              processData(row, i);
+            }
+          }
+        }
+
         setState(() {
           _isProcessing = false;
         });
@@ -78,148 +103,121 @@ class _AddMultipleScreenState extends State<AddMultipleScreen> {
     }
   }
 
-  void processCSV(List<List<dynamic>> csvData) {
-    errorList.clear();
-    uploadableList.clear();
-    HashMap<String, Map<String, String>> phoneMap = HashMap();
-    HashMap<String, Map<String, String>> aadharMap = HashMap();
-    for (var i = 1; i < csvData.length; i++) {
-      bool hasError = false;
-      var row = csvData[i];
-      if (row.length != 7) {
-        hasError = true;
-        errorList.add({
-          'row': i + 1,
-          'column': -1,
-          'msg': 'Number of Columns not equal to 7'
-        });
-        continue;
-      }
-      Worker worker = Worker();
-      worker.name = row[1];
-      if (worker.name.isEmpty || Utils.isNumeric(worker.name.trim())) {
-        hasError = true;
-        errorList.add({
-          'row': i + 1,
-          'column': 2,
-          'msg': 'Name is either empty or is numeric'
-        });
-        continue;
-      }
-      if (row[2] == null || row[2].toString().trim().isEmpty) {
-        hasError = true;
-        errorList
-            .add({'row': i + 1, 'column': 3, 'msg': 'Phone number is Empty'});
-      }
-      if (!Utils.isNumeric(row[2].toString().trim()) ||
-          row[2].toString().trim().length != 10) {
-        hasError = true;
-        errorList
-            .add({'row': i + 1, 'column': 3, 'msg': 'Phone number is invalid'});
-        continue;
-      }
+  void processExcel() {}
+  void processData(List<dynamic> row, int i) {
+    bool hasError = false;
+    if (row.length != 7) {
+      hasError = true;
+      errorList.add({
+        'row': i + 1,
+        'column': -1,
+        'msg': 'Number of Columns not equal to 7'
+      });
+      return;
+    }
+    Worker worker = Worker();
+    worker.name = row[1];
+    if (worker.name.isEmpty || Utils.isNumeric(worker.name.trim())) {
+      hasError = true;
+      errorList.add({
+        'row': i + 1,
+        'column': 2,
+        'msg': 'Name is either empty or is numeric'
+      });
+      return;
+    }
+    if (row[2] == null || row[2].toString().trim().isEmpty) {
+      hasError = true;
+      errorList
+          .add({'row': i + 1, 'column': 3, 'msg': 'Phone number is Empty'});
+    }
+    if (!Utils.isNumeric(row[2].toString().trim()) ||
+        row[2].toString().trim().length != 10) {
+      hasError = true;
+      errorList
+          .add({'row': i + 1, 'column': 3, 'msg': 'Phone number is invalid'});
+      return;
+    }
 
-      worker.phoneNumber = row[2].toString();
-      if (!phoneMap.containsKey(worker.phoneNumber)) {
-        phoneMap.putIfAbsent(
-            worker.phoneNumber, () => {'row': '${i + 1}', 'column': '3'});
-      } else {
-        // already contains phone number
-        hasError = true;
-        errorList.add({
-          'row': i + 1,
-          'column': 3,
-          'msg':
-              'Phone number same as at line: ${phoneMap[worker.phoneNumber]['row']}'
-        });
-        continue;
-      }
-      if (row[3] == null || row[3].toString().isEmpty) {
-        if (!Utils.isNumeric(row[3].toString().trim()) ||
-            row[3].toString().trim().length != 12) {
-          hasError = true;
-          errorList.add(
-              {'row': i + 1, 'column': 3, 'msg': 'Aadhar number is invalid'});
-          continue;
-        }
-      }
-      worker.aadhar = row[3].toString();
-      if (!aadharMap.containsKey(worker.aadhar)) {
-        aadharMap.putIfAbsent(
-            worker.aadhar, () => {'row': '${i + 1}', 'column': '4'});
-      } else {
-        // already contains aadhar number
-        hasError = true;
-        errorList.add({
-          'row': i + 1,
-          'column': 4,
-          'msg':
-              'Aadhar number same as at line: ${aadharMap[worker.aadhar]['row']}'
-        });
-        continue;
-      }
-      if (row[4] == null || row[4].toString().isEmpty) {
-        hasError = true;
-        errorList.add({'row': i + 1, 'column': 5, 'msg': 'Address is Empty'});
-        continue;
-      }
-      worker.address = row[4];
-      if (row[5] == null || row[5].toString().isEmpty) {
-        hasError = true;
-        errorList.add({'row': i + 1, 'column': 6, 'msg': 'isSkilled is Empty'});
-        continue;
-      }
-      if (row[5].toString().toLowerCase().compareTo('TRUE'.toLowerCase()) ==
-              0 ||
-          row[5].toString().toLowerCase().compareTo('FALSE'.toLowerCase()) ==
-              0) {
-        worker.isSkilled =
-            row[5].toString().toLowerCase().compareTo('TRUE'.toLowerCase()) ==
-                0;
-      } else {
-        hasError = true;
-        errorList.add({'row': i + 1, 'column': 6, 'msg': 'invalid syntax'});
-        continue;
-      }
-      if (row[6] == null || row[6].toString().isEmpty) {
+    worker.phoneNumber = row[2].toString();
+    if (!phoneMap.containsKey(worker.phoneNumber)) {
+      phoneMap.putIfAbsent(
+          worker.phoneNumber, () => {'row': '${i + 1}', 'column': '3'});
+    } else {
+      // already contains phone number
+      hasError = true;
+      errorList.add({
+        'row': i + 1,
+        'column': 3,
+        'msg':
+            'Phone number same as at line: ${phoneMap[worker.phoneNumber]['row']}'
+      });
+      return;
+    }
+    if (row[3] == null || row[3].toString().isEmpty) {
+      if (!Utils.isNumeric(row[3].toString().trim()) ||
+          row[3].toString().trim().length != 12) {
         hasError = true;
         errorList.add(
-            {'row': i + 1, 'column': 7, 'msg': 'SkillType cannot be empty'});
-        continue;
-      }
-
-      worker.skillType = row[6];
-      if (worker.isSkilled) {
-        if (Constants.skilledCategories
-            .where((w) => w.name.compareTo(worker.skillType) == 0)
-            .isEmpty) {
-          hasError = true;
-          errorList.add(
-              {'row': i + 1, 'column': 7, 'msg': 'SkillType is not found'});
-          continue;
-        }
-      } else {
-        if (Constants.unskilledCategories
-            .where((w) => w.name.compareTo(worker.skillType) == 0)
-            .isEmpty) {
-          hasError = true;
-          print(Constants.unskilledCategories[0].name);
-          print(worker.skillType);
-          errorList.add({
-            'row': i + 1,
-            'column': 7,
-            'msg': 'Unskilled SkillType is not found'
-          });
-          continue;
-        }
-      }
-      if (!hasError) {
-        print(worker.toString());
-        uploadableList.add(worker);
-      } else {
-        // handle error
+            {'row': i + 1, 'column': 3, 'msg': 'Aadhar number is invalid'});
+        return;
       }
     }
+
+    if (row[4] == null || row[4].toString().isEmpty) {
+      hasError = true;
+      errorList.add({'row': i + 1, 'column': 5, 'msg': 'Address is Empty'});
+      return;
+    }
+    
+    if (row[5].toString().toLowerCase().compareTo('TRUE'.toLowerCase()) == 0 ||
+        row[5].toString().toLowerCase().compareTo('FALSE'.toLowerCase()) == 0) {
+      worker.isSkilled =
+          row[5].toString().toLowerCase().compareTo('TRUE'.toLowerCase()) == 0;
+    } else {
+      hasError = true;
+      errorList.add({'row': i + 1, 'column': 6, 'msg': 'invalid syntax'});
+      return;
+    }
+    if (row[6] == null || row[6].toString().isEmpty) {
+      hasError = true;
+      errorList
+          .add({'row': i + 1, 'column': 7, 'msg': 'SkillType cannot be empty'});
+      return;
+    }
+
+    worker.skillType = row[6];
+    if (worker.isSkilled) {
+      if (Constants.skilledCategories
+          .where((w) => w.name.compareTo(worker.skillType) == 0)
+          .isEmpty) {
+        hasError = true;
+        errorList
+            .add({'row': i + 1, 'column': 7, 'msg': 'SkillType is not found'});
+        return;
+      }
+    } else {
+      if (Constants.unskilledCategories
+          .where((w) => w.name.compareTo(worker.skillType) == 0)
+          .isEmpty) {
+        hasError = true;
+        print(Constants.unskilledCategories[0].name);
+        print(worker.skillType);
+        errorList.add({
+          'row': i + 1,
+          'column': 7,
+          'msg': 'Unskilled SkillType is not found'
+        });
+        return;
+      }
+    }
+    if (!hasError) {
+      print(worker.toString());
+      uploadableList.add(worker);
+    } else {
+      // handle error
+    }
+
     print(errorList.toString());
   }
 
@@ -255,8 +253,7 @@ class _AddMultipleScreenState extends State<AddMultipleScreen> {
           await model.addWorker(uploadableList[i]);
         } on ServiceException catch (err) {
           uploadErrorList.add({
-            'msg':
-                'Phone: ${uploadableList[i].phoneNumber} or Aadhar ${uploadableList[i].aadhar} already exists'
+            'msg': 'Phone: ${uploadableList[i].phoneNumber}} already exists'
           });
         } catch (err) {
           uploadErrorList.add({'msg': err.toString()});
@@ -337,10 +334,10 @@ class _AddMultipleScreenState extends State<AddMultipleScreen> {
                                             fit: BoxFit.cover,
                                           )
                                         : InkWell(
-                                            onTap: _loadCSV,
+                                            onTap: _loadData,
                                             child: Center(
                                               child: Text(
-                                                'Upload CSV',
+                                                'Upload xlsx or csv',
                                                 textAlign: TextAlign.center,
                                               ),
                                             ),
@@ -357,8 +354,8 @@ class _AddMultipleScreenState extends State<AddMultipleScreen> {
                                 alignment: Alignment.center,
                                 child: Container(
                                   child: RaisedButton(
-                                    onPressed: _loadCSV,
-                                    child: Text('Load CSV'),
+                                    onPressed: _loadData,
+                                    child: Text('Load csv or xlsx'),
                                   ),
                                 ),
                               ),

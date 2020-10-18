@@ -1,7 +1,12 @@
+import 'dart:convert';
+
+import 'package:shram/UI/utilities/constants.dart';
 import 'package:shram/UI/utilities/resources.dart';
 import 'package:shram/core/enums/result.dart';
+import 'package:shram/core/helpers/sharedpreference_helper.dart';
 import 'package:shram/core/models/categories.dart';
 import 'package:shram/core/services/services.dart';
+import 'package:http/http.dart' as http;
 
 class CategoriesService extends Services {
   List<Categories> _categories = [];
@@ -98,5 +103,24 @@ class CategoriesService extends Services {
     dummyCategories.forEach((value) {
       categoriesRef.add(value);
     });
+  }
+
+  Future getAddressData() async {
+    var res = await storageReference
+        .child('address/address_data.json')
+        .getDownloadURL();
+    print(res);
+    var response = await http.get(res);
+    var decodedRes = json.decode(response.body) as List;
+    Constants.addressData.clear();
+    Constants.addressData.addAll(decodedRes);
+    sharedPreferencesHelper.setAddressData(response.body);
+  }
+
+  getAddressDataFromSharedPref() async {
+    String data = await sharedPreferencesHelper.getAddressData();
+    var decodedRes = json.decode(data) as List;
+    Constants.addressData.clear();
+    Constants.addressData.addAll(decodedRes);
   }
 }

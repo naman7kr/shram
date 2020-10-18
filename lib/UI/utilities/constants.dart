@@ -22,20 +22,18 @@ class Constants {
 
   static List<Categories> unskilledCategories = [];
   static List<Categories> skilledCategories = [];
-
+  static List<dynamic> addressData = [];
   static List<Worker> getWorkers(Categories cat) {
     List<Worker> workers = [];
     for (int i = 0; i < 30; i++) {
       workers.add(Worker(
           id: DateTime.now().toString(),
           name: 'Worker${cat.name} $i',
-          aadhar: '1231241231242',
-          address: 'pandit jee road Hazaribag, Jharkhand',
+
           isSkilled: cat.isSkilled,
           phoneNumber: '0011223344',
           skillType: cat.name,
           searchName: [],
-          searchAadhar: [],
           searchPhone: []));
     }
     workers.forEach((worker) {
@@ -45,9 +43,6 @@ class Constants {
       for (int i = 1; i < worker.phoneNumber.length + 1; i++) {
         worker.searchPhone
             .add(worker.phoneNumber.substring(0, i).toLowerCase());
-      }
-      for (int i = 1; i < worker.aadhar.length + 1; i++) {
-        worker.searchAadhar.add(worker.aadhar.substring(0, i).toLowerCase());
       }
     });
     return workers;

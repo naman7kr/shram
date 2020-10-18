@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as Auth;
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/services.dart';
 import 'package:shram/UI/utilities/resources.dart';
 import 'package:shram/core/helpers/sharedpreference_helper.dart';
@@ -25,9 +26,16 @@ class Services {
   CollectionReference _workersRef = _firestore.collection('Workers');
   CollectionReference _categoriesRef = _firestore.collection('Categories');
   CollectionReference _deletedWorkerRef = _firestore.collection('Deleted');
+  CollectionReference _categoryCounterRef = _firestore
+      .collection('Counters')
+      .doc('workerTotalCounter')
+      .collection('Categories');
+  StorageReference _storageReference = FirebaseStorage.instance.ref();
+  DocumentReference _workerIdCounterRef =
+      _firestore.collection('Counters').doc('workerIdCounter');
+  DocumentReference _workerTotalCounterRef =
+      _firestore.collection('Counters').doc('workerTotalCounter');
 
-  DocumentReference _workerCounterRef =
-      _firestore.collection('Counters').doc('workerCounter');
   DocumentReference _userCounterRef =
       _firestore.collection('Counters').doc('userCounter');
 
@@ -48,12 +56,16 @@ class Services {
     return _sharedPreferenceHelper;
   }
 
+  StorageReference get storageReference => _storageReference;
   CollectionReference get userCollectionRef => _userCollectionRef;
   CollectionReference get workersRef => _workersRef;
   CollectionReference get categoriesRef => _categoriesRef;
   CollectionReference get deletedRef => _deletedWorkerRef;
-  DocumentReference get workersCounterRef => _workerCounterRef;
+  CollectionReference get categoryCounterRef => _categoryCounterRef;
+
   DocumentReference get userCounterRef => _userCounterRef;
+  DocumentReference get workersCounterRef => _workerTotalCounterRef;
+  DocumentReference get workersIdCounterRef => _workerIdCounterRef;
   getFirebaseUser() {
     firebaseUser = _auth.currentUser;
   }
@@ -61,7 +73,7 @@ class Services {
   Future<bool> checkInternetConnection() async {
     try {
       await firestore
-          .runTransaction((tx) {})
+          .runTransaction((tx) async {})
           .timeout(Duration(seconds: integer.internet_timeout));
       return true;
     } on PlatformException catch (_) {

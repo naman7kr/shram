@@ -83,12 +83,15 @@ class AuthenticationService extends Services {
 
   Future registerUser(User user) async {
     firestore.runTransaction((tx) async {
-      final counterResponse = await userCounterRef.get().catchError((err) {
-        print('LOL');
-      });
-      user.id = 'U${counterResponse.data()['count']}';
-      await userCollectionRef.doc(firebaseUser.uid).set(user.toMap());
+      final counterResponse = await userCounterRef.get();
+      if (counterResponse.exists) {
+        user.id = 'U${counterResponse.data()['count']}';
+      } else {
+        await userCounterRef.set({'count': 1});
+        user.id = 'U1';
+      }
       await userCounterRef.update({'count': FieldValue.increment(1)});
+      await userCollectionRef.doc(firebaseUser.uid).set(user.toMap());
     }).catchError((err) {
       throw err;
     });

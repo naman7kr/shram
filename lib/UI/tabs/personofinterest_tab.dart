@@ -76,9 +76,10 @@ class _PersonOfInterestTabState extends State<PersonOfInterestTab> {
       }
     }).catchError((err) {
       print(err);
-      setState(() {
-        _isLoading = false;
-      });
+      if (this.mounted)
+        setState(() {
+          _isLoading = false;
+        });
     });
   }
 

@@ -55,13 +55,24 @@ class _VerifyPhoneScreenState extends State<VerifyPhoneScreen> {
   }
 
   Future<void> _sendCodeToPhoneNumber() async {
-    final Auth.PhoneVerificationCompleted verificationCompleted = (user) {
+    final Auth.PhoneVerificationCompleted verificationCompleted = (user) async {
       setState(() {
         textEditingController.text = user.smsCode != null ? user.smsCode : '';
         print(
             'Inside _sendCodeToPhoneNumber: signInWithPhoneNumber auto succeeded: $user');
       });
-      Navigator.of(context).pop('Success');
+      if (await _authenticationService.checkInternetConnection()) {
+        try {
+          await Auth.FirebaseAuth.instance.currentUser.updatePhoneNumber(user);
+          print('DONE');
+          Navigator.of(context).pop('Success');
+        } catch (err) {
+          print(err);
+          setState(() {
+            textEditingController.text = '';
+          });
+        }
+      }
     };
 
     final Auth.PhoneVerificationFailed verificationFailed = (authException) {

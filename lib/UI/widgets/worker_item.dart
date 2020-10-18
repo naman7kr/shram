@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shram/UI/screens/worker_details_screen.dart';
+import 'package:shram/UI/utilities/slide_top_route.dart';
+import 'package:shram/core/enums/gender.dart';
 import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/models/worker.dart';
 import 'package:shram/core/services/authentication_service.dart';
@@ -82,13 +85,15 @@ class _WorkerItemState extends State<WorkerItem> {
     // print('WTF:' + worker.name);
 
     return GestureDetector(
-      onTap: widget.isSelecting
-          ? null
-          : () {
-              setState(() {
-                _isExpanded = !_isExpanded;
-              });
-            },
+      onTap: () => Navigator.of(context)
+          .pushNamed(WorkerDetailsScreen.routeName, arguments: widget.worker),
+      // widget.isSelecting
+      //     ? null
+      //     : () {
+      //         setState(() {
+      //           _isExpanded = !_isExpanded;
+      //         });
+      //       },
       child: Card(
         elevation: 5,
         margin: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
@@ -102,10 +107,17 @@ class _WorkerItemState extends State<WorkerItem> {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      child: Text(
-                        widget.worker.name[0].toUpperCase(),
-                        style: Theme.of(context).textTheme.headline2,
+                    Hero(
+                      tag: widget.worker.id,
+                      child: CircleAvatar(
+                        backgroundImage: widget.worker.img == null ||
+                                widget.worker.img.isEmpty
+                            ? AssetImage(
+                                GenderHelper.getEnum(widget.worker.gender) ==
+                                        Gender.FEMALE
+                                    ? string.female_dummy
+                                    : string.male_dummy)
+                            : Image.network(widget.worker.img),
                       ),
                     ),
                     Expanded(
@@ -114,7 +126,8 @@ class _WorkerItemState extends State<WorkerItem> {
                           margin: EdgeInsets.symmetric(horizontal: 15),
                           child: Text(
                             widget.worker.name,
-                            style: Theme.of(context).textTheme.bodyText2,
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w500),
                           ),
                         )),
                     Expanded(
@@ -182,106 +195,64 @@ class _WorkerItemState extends State<WorkerItem> {
                     ),
                   ],
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        margin: EdgeInsets.only(left: 55),
-                        alignment: Alignment.centerLeft,
-                        child: Text(widget.worker.skillType),
-                      ),
-                    ),
-                    Container(
-                      alignment: Alignment.bottomRight,
-                      child: IconButton(
-                        icon: Icon(_isExpanded
-                            ? Icons.arrow_drop_up
-                            : Icons.arrow_drop_down),
-                        onPressed: widget.isSelecting
-                            ? null
-                            : () {
-                                setState(() {
-                                  _isExpanded = !_isExpanded;
-                                });
-                              },
-                      ),
-                    )
-                  ],
-                ),
-                if (_isExpanded)
-                  Column(
+                Container(
+                  margin: EdgeInsets.only(top: 10),
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Text('Phone:'),
-                          Expanded(
-                            child: Container(
-                              margin: EdgeInsets.only(left: 8),
-                              child: Text(widget.worker.phoneNumber),
-                            ),
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.phone,
-                              color: Theme.of(context).accentColor,
-                            ),
-                            onPressed: widget.isSelecting
-                                ? null
-                                : () async {
-                                    try {
-                                      await UrlLauncher.launch('tel://' +
-                                          '+91' +
-                                          widget.worker.phoneNumber);
-                                    } catch (err) {
-                                      print(err);
-                                    }
-                                  },
-                          )
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Text('Address:'),
-                          Expanded(
-                            flex: 7,
-                            child: Container(
-                              margin: EdgeInsets.only(left: 8),
-                              child: Text(widget.worker.address),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Container(
-                              width: 10,
-                            ),
-                          )
-                        ],
-                      ),
-                      Container(
-                        margin: EdgeInsets.only(top: 10),
-                        child: Row(
-                          children: [
-                            Text('Aadhar:'),
-                            Expanded(
-                              flex: 7,
-                              child: Container(
-                                margin: EdgeInsets.only(left: 8),
-                                child: Text(widget.worker.aadhar == null
-                                    ? ''
-                                    : widget.worker.aadhar),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: Container(
-                                width: 10,
-                              ),
-                            )
-                          ],
+                      Expanded(
+                          flex: 2,
+                          child: Text(
+                            'Skill Type:',
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w300),
+                          )),
+                      Expanded(
+                        flex: 5,
+                        child: Container(
+                          alignment: Alignment.centerLeft,
+                          child: Text(widget.worker.skillType,
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w400)),
                         ),
                       ),
                     ],
-                  )
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        'Phone:',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w300),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 4,
+                      child: Container(
+                        margin: EdgeInsets.only(left: 8),
+                        child: Text('+91 ${widget.worker.phoneNumber}',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w400)),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.phone,
+                        color: Theme.of(context).accentColor,
+                      ),
+                      onPressed: () async {
+                        try {
+                          await UrlLauncher.launch(
+                              'tel://' + '+91' + widget.worker.phoneNumber);
+                        } catch (err) {
+                          print(err);
+                        }
+                      },
+                    )
+                  ],
+                ),
               ],
             ),
           ),

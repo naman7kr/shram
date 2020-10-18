@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shram/UI/screens/add_worker/select_add_screen.dart';
+import 'package:shram/UI/screens/overview_screen.dart';
 import 'package:shram/UI/utilities/resources.dart';
 import 'package:shram/core/enums/user_type.dart';
 import 'package:shram/core/models/user.dart';
@@ -84,6 +85,19 @@ class _AppDrawerState extends State<AppDrawer> {
                     // do nothing
                     Navigator.pop(context);
                     Navigator.of(context).pushNamed(SelectAddScreen.routeName);
+                  },
+                ),
+                Divider(),
+                ListTile(
+                  leading: Icon(Icons.add_box),
+                  title: Text(
+                    'Overview',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                  onTap: () {
+                    // do nothing
+                    Navigator.pop(context);
+                    Navigator.of(context).pushNamed(OverviewScreen.routeName);
                   },
                 ),
                 Divider(),

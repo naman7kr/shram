@@ -3,7 +3,10 @@ import 'package:shram/UI/BaseView.dart';
 import 'package:shram/UI/utilities/constants.dart';
 import 'package:shram/UI/utilities/resources.dart';
 import 'package:shram/UI/utilities/service_exception.dart';
+import 'package:shram/UI/utilities/utils.dart';
 import 'package:shram/UI/widgets/Background.dart';
+import 'package:shram/UI/widgets/DropDownList.dart';
+import 'package:shram/core/enums/gender.dart';
 import 'package:shram/core/models/categories.dart';
 import 'package:shram/core/models/worker.dart';
 import 'package:shram/core/viewmodel/workers_page_model.dart';
@@ -24,7 +27,7 @@ class _AddSingleState extends State<AddSingle> {
   final _addressFocus = FocusNode();
   int _selectedRadio = 0;
   bool initRadio = true;
-
+  bool isOther = false;
   bool _isLoading = false;
   Worker _worker = Worker();
   Worker oldWorker;
@@ -32,13 +35,36 @@ class _AddSingleState extends State<AddSingle> {
 
   Categories selectedSkilled;
   Categories selectedUnskilled;
+
+  int selectedBlock = -1;
+  int selectedPanchayat = -1;
+  int selectedVillage = -1;
+
+  List<String> blockNames = [];
+  List<String> panchayatNames = [];
+  List<String> villageNames = [];
+  List<String> categoryNames = [];
+  Gender gender;
+
   bool isFirstTime = true;
   bool isUpdating = false;
   @override
   void initState() {
     selectedSkilled = Constants.skilledCategories[0];
     selectedUnskilled = Constants.unskilledCategories[0];
+    initialiseList();
     super.initState();
+  }
+
+  void initialiseList() {
+    var addressData = Constants.addressData;
+    blockNames.clear();
+    for (var block in addressData) {
+      blockNames.add(block['name']);
+    }
+    blockNames.insert(0, 'N/A');
+    gender = Gender.MALE;
+    // print(Constants.addressData[selectedBlock]);
   }
 
   @override
@@ -52,9 +78,9 @@ class _AddSingleState extends State<AddSingle> {
         // print('LOL');
         oldWorker = args['worker'];
         docId = args['docId'];
-        print(oldWorker.searchAadhar);
+
         _worker = Worker.clone(oldWorker);
-        print(_worker.searchAadhar);
+
         print(_worker.toString());
         initRadio = false;
         isUpdating = true;
@@ -87,63 +113,6 @@ class _AddSingleState extends State<AddSingle> {
     });
   }
 
-  Widget categoriesItem(Categories cat) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: () {
-            if (initRadio || _selectedRadio == 1) {
-              selectedSkilled = cat;
-            } else {
-              selectedUnskilled = cat;
-            }
-            Navigator.of(context).pop();
-          },
-          child: Container(
-              padding: EdgeInsets.all(8),
-              alignment: Alignment.center,
-              child: Text(cat.name)),
-        ),
-        Divider()
-      ],
-    );
-  }
-
-  List<Categories> getCategoriesData() {
-    List<Categories> data;
-    if (initRadio || _selectedRadio == 1) {
-      data = Constants.skilledCategories;
-    } else {
-      data = Constants.unskilledCategories;
-    }
-    return data;
-  }
-
-  Future _showDialog(BuildContext context) async {
-    FocusScope.of(context).unfocus();
-    var data = getCategoriesData();
-    return showDialog(
-      context: context,
-      // barrierDismissible: false,
-
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Select Category'),
-          content: Container(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: data.length,
-              itemBuilder: (context, index) {
-                return categoriesItem(data[index]);
-              },
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future _saveForm(WorkersPageModel model) async {
     FocusScope.of(context).unfocus();
     var isValid = _form.currentState.validate();
@@ -151,11 +120,35 @@ class _AddSingleState extends State<AddSingle> {
     if (isValid) {
       _worker.isSkilled = _selectedRadio == 1 || initRadio ? true : false;
       if (_worker.isSkilled) {
-        _worker.skillType = selectedSkilled.name;
+        _worker.skillType = selectedSkilled.name.toLowerCase();
       } else {
-        _worker.skillType = selectedUnskilled.name;
+        _worker.skillType = selectedUnskilled.name.toLowerCase();
       }
+      _worker.district = 'Hazaribag';
+      _worker.block = selectedBlock == -1
+          ? ''
+          : Constants.addressData[selectedBlock]['name']
+              .toString()
+              .toLowerCase();
+      _worker.panchayat = selectedPanchayat == -1
+          ? ''
+          : Constants.addressData[selectedBlock]['panchayats']
+                  [selectedPanchayat]['name']
+              .toString()
+              .toLowerCase();
+      _worker.village = selectedVillage == -1
+          ? ''
+          : Constants.addressData[selectedBlock]['panchayats']
+                  [selectedPanchayat]['villages'][selectedVillage]
+              .toString()
+              .toLowerCase();
+
+      _worker.gender = GenderHelper.getValue(gender);
+      _worker.isOther = isOther;
+      _worker.img = '';
+
       _form.currentState.save();
+      print('yesss');
       print(_worker.name);
       if (isUpdating && _worker.isEqualTo(oldWorker)) {
         _scaffoldKey.currentState.hideCurrentSnackBar();
@@ -285,179 +278,210 @@ class _AddSingleState extends State<AddSingle> {
                                   top: 40, left: 20, right: 20, bottom: 20),
                               child: Form(
                                 key: _form,
-                                child: ListView(
-                                  children: [
-                                    TextFormField(
-                                      initialValue: _worker.name,
-                                      decoration:
-                                          InputDecoration(labelText: 'Name'),
-                                      textInputAction: TextInputAction.next,
-                                      onFieldSubmitted: (_) {
-                                        FocusScope.of(context)
-                                            .requestFocus(_phoneFocus);
-                                      },
-                                      onSaved: (val) {
-                                        _worker.name = val.trim();
-                                      },
-                                      validator: (value) {
-                                        if (value.isEmpty) {
-                                          return 'Please Provide Worker Name';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Text('+91'),
-                                        SizedBox(
-                                          width: 5,
-                                        ),
-                                        Expanded(
-                                          child: TextFormField(
-                                            initialValue: _worker.phoneNumber,
-                                            focusNode: _phoneFocus,
-                                            keyboardType: TextInputType.number,
-                                            maxLength: 10,
-                                            decoration: InputDecoration(
-                                                labelText: 'Phone Number'),
-                                            textInputAction:
-                                                TextInputAction.next,
-                                            onFieldSubmitted: (_) {
-                                              FocusScope.of(context).unfocus();
-                                              // FocusScope.of(context)
-                                              //     .requestFocus(_addressFocus);
-                                            },
-                                            validator: (value) {
-                                              if (value.isEmpty) {
-                                                return 'Please Provide Worker Phone number';
-                                              }
-                                              if (value.trim().length != 10) {
-                                                return 'Invalid Phone number';
-                                              }
-                                              if (int.parse(value).isNaN) {
-                                                return 'Invalid Phone number';
-                                              }
-                                              return null;
-                                            },
-                                            onSaved: (val) {
-                                              _worker.phoneNumber = val.trim();
-                                            },
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      margin: EdgeInsets.symmetric(vertical: 5),
-                                      child: ButtonBar(
-                                        alignment: MainAxisAlignment.center,
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    children: [
+                                      TextFormField(
+                                        initialValue: _worker.name,
+                                        decoration:
+                                            InputDecoration(labelText: 'Name'),
+                                        textInputAction: TextInputAction.next,
+                                        onFieldSubmitted: (_) {
+                                          FocusScope.of(context)
+                                              .requestFocus(_phoneFocus);
+                                        },
+                                        onSaved: (val) {
+                                          _worker.name = val.trim();
+                                        },
+                                        validator: (value) {
+                                          if (value.isEmpty) {
+                                            return 'Please Provide Worker Name';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                      DropDownList(
+                                          title: 'Gender',
+                                          selectedValue:
+                                              GenderHelper.getValue(gender),
+                                          data: ['Male', 'Female', 'Other'],
+                                          onSelect: onGenderSelect),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
-                                          Text('Skilled'),
-                                          Radio(
-                                            value: 1,
-                                            groupValue: getVal(),
-                                            activeColor: Colors.green,
-                                            onChanged: (val) {
-                                              setSelectedRadio(val);
-                                            },
+                                          Text('+91'),
+                                          SizedBox(
+                                            width: 5,
                                           ),
-                                          Text('Unskilled'),
-                                          Radio(
-                                            value: 2,
-                                            groupValue: _selectedRadio,
-                                            activeColor: Colors.green,
-                                            onChanged: (val) {
-                                              setSelectedRadio(val);
-                                            },
-                                          )
+                                          Expanded(
+                                            child: TextFormField(
+                                              initialValue: _worker.phoneNumber,
+                                              focusNode: _phoneFocus,
+                                              keyboardType:
+                                                  TextInputType.number,
+                                              maxLength: 10,
+                                              decoration: InputDecoration(
+                                                  labelText: 'Phone Number'),
+                                              textInputAction:
+                                                  TextInputAction.next,
+                                              onFieldSubmitted: (_) {
+                                                FocusScope.of(context)
+                                                    .unfocus();
+                                                // FocusScope.of(context)
+                                                //     .requestFocus(_addressFocus);
+                                              },
+                                              validator: (value) {
+                                                if (value.isEmpty) {
+                                                  return 'Please Provide Worker Phone number';
+                                                }
+                                                if (value.trim().length != 10 ||
+                                                    !Utils.isNumeric(
+                                                        value.trim())) {
+                                                  return 'Invalid Phone number';
+                                                }
+                                                if (int.parse(value).isNaN) {
+                                                  return 'Invalid Phone number';
+                                                }
+                                                return null;
+                                              },
+                                              onSaved: (val) {
+                                                _worker.phoneNumber =
+                                                    val.trim();
+                                              },
+                                            ),
+                                          ),
                                         ],
                                       ),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.7,
-                                          decoration: BoxDecoration(
-                                              border: Border.all(
-                                                  color: Colors.grey)),
-                                          child: Row(
-                                            children: [
-                                              Expanded(
-                                                child: InkWell(
-                                                  child: Container(
-                                                      alignment:
-                                                          Alignment.center,
-                                                      padding:
-                                                          EdgeInsets.all(10),
-                                                      child:
-                                                          Text(getCategory())),
-                                                  onTap: () {
-                                                    _showDialog(context).then(
-                                                        (value) =>
-                                                            setState(() {}));
-                                                  },
-                                                ),
-                                              ),
-                                              Icon(Icons.arrow_drop_down)
-                                            ],
-                                          ),
+                                      Container(
+                                        margin:
+                                            EdgeInsets.symmetric(vertical: 5),
+                                        child: ButtonBar(
+                                          alignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text('Skilled'),
+                                            Radio(
+                                              value: 1,
+                                              groupValue: getVal(),
+                                              activeColor: Colors.green,
+                                              onChanged: (val) {
+                                                setSelectedRadio(val);
+                                              },
+                                            ),
+                                            Text('Unskilled'),
+                                            Radio(
+                                              value: 2,
+                                              groupValue: _selectedRadio,
+                                              activeColor: Colors.green,
+                                              onChanged: (val) {
+                                                setSelectedRadio(val);
+                                              },
+                                            )
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                    TextFormField(
-                                      initialValue: _worker.aadhar,
-                                      keyboardType: TextInputType.phone,
-                                      maxLength: 12,
-                                      decoration: InputDecoration(
-                                          labelText: 'Aadhar Number'),
-                                      textInputAction: TextInputAction.next,
-                                      onFieldSubmitted: (_) {
-                                        FocusScope.of(context)
-                                            .requestFocus(_addressFocus);
-                                      },
-                                      onSaved: (val) {
-                                        _worker.aadhar = val.trim();
-                                      },
-                                      validator: (value) {
-                                        if (value.isNotEmpty &&
-                                            value.length != 12) {
-                                          return 'Invalid Aadhar';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    TextFormField(
-                                      // focusNode: _addressFocus,
-                                      initialValue: _worker.address,
-                                      keyboardType: TextInputType.multiline,
-                                      focusNode: _addressFocus,
+                                      ),
+                                      DropDownList(
+                                          title: 'Category',
+                                          selectedValue: getSelectedCategory(),
+                                          data: getCategoryList(),
+                                          onSelect: onSelectCategory),
+                                      isOther
+                                          ? TextFormField(
+                                              initialValue: _worker.name,
+                                              decoration: InputDecoration(
+                                                  labelText:
+                                                      'Write Category Name if any'),
+                                              textInputAction:
+                                                  TextInputAction.next,
+                                              onFieldSubmitted: (_) {
+                                                FocusScope.of(context)
+                                                    .unfocus();
+                                              },
+                                              onSaved: (val) {
+                                                if (val.isNotEmpty)
+                                                  _worker.skillType =
+                                                      val.trim();
+                                              },
+                                              validator: (value) {
+                                                return null;
+                                              },
+                                            )
+                                          : Container(),
+                                      Container(
+                                        margin:
+                                            EdgeInsets.symmetric(vertical: 10),
+                                        child: Text(
+                                          'Address',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headline3,
+                                        ),
+                                      ),
+                                      DropDownList(
+                                        title: 'District',
+                                        selectedValue: 'Hazaribag',
+                                        data: ['Hazaribag'],
+                                        onSelect: null,
+                                        isEnabled: false,
+                                      ),
+                                      DropDownList(
+                                          title: 'Block',
+                                          selectedValue: selectedBlock == -1
+                                              ? 'N/A'
+                                              : Constants.addressData[
+                                                  selectedBlock]['name'],
+                                          data: blockNames,
+                                          onSelect: onSelectBlock),
+                                      DropDownList(
+                                        title: 'Panchayat',
+                                        selectedValue: selectedPanchayat == -1
+                                            ? 'N/A'
+                                            : Constants.addressData[
+                                                    selectedBlock]['panchayats']
+                                                [selectedPanchayat]['name'],
+                                        data: getPanchayatList(),
+                                        onSelect: onSelectPanchayat,
+                                        isEnabled:
+                                            selectedBlock == -1 ? false : true,
+                                      ),
+                                      DropDownList(
+                                        title: 'Village',
+                                        selectedValue: selectedVillage == -1
+                                            ? 'N/A'
+                                            : Constants.addressData[
+                                                            selectedBlock]
+                                                        ['panchayats']
+                                                    [selectedPanchayat]
+                                                ['villages'][selectedVillage],
+                                        data: getVillageList(),
+                                        onSelect: onSelectVillage,
+                                        isEnabled: selectedPanchayat == -1
+                                            ? false
+                                            : true,
+                                      ),
+                                      TextFormField(
+                                        // focusNode: _addressFocus,
+                                        initialValue: _worker.address,
+                                        keyboardType: TextInputType.multiline,
+                                        focusNode: _addressFocus,
 
-                                      decoration:
-                                          InputDecoration(labelText: 'Address'),
-                                      maxLines: 4,
-                                      maxLength: 200,
+                                        decoration: InputDecoration(
+                                            labelText:
+                                                'House no, street name or area'),
+                                        maxLines: 4,
+                                        maxLength: 200,
 
-                                      textInputAction: TextInputAction.newline,
-                                      onSaved: (val) {
-                                        _worker.address = val.trim();
-                                      },
-                                      validator: (value) {
-                                        if (value.isEmpty) {
-                                          return 'Please Provide Worker Address';
-                                        }
-                                        if (value.trim().length < 15) {
-                                          return 'Should be at least 10 characters';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ],
+                                        textInputAction:
+                                            TextInputAction.newline,
+                                        onSaved: (val) {
+                                          _worker.address = val.trim();
+                                        },
+                                        validator: (value) {
+                                          return null;
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -494,5 +518,116 @@ class _AddSingleState extends State<AddSingle> {
         );
       },
     );
+  }
+
+  List<String> getPanchayatList() {
+    panchayatNames.clear();
+    if (selectedBlock == -1) {
+      return [];
+    }
+    var panchayats = Constants.addressData[selectedBlock]['panchayats'];
+    panchayatNames.clear();
+    for (var panchayat in panchayats) {
+      panchayatNames.add(panchayat['name']);
+    }
+    panchayatNames.insert(0, 'N/A');
+    return panchayatNames;
+  }
+
+  List<String> getVillageList() {
+    villageNames.clear();
+    if (selectedPanchayat == -1) return [];
+    var villages = Constants.addressData[selectedBlock]['panchayats']
+        [selectedPanchayat]['villages'];
+    villageNames.clear();
+    if (villages != null) {
+      for (var village in villages) {
+        villageNames.add(village);
+      }
+    }
+    villageNames.insert(0, 'N/A');
+
+    return villageNames;
+  }
+
+  void onSelectBlock(int selectedPos) {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      selectedBlock = selectedPos - 1;
+      selectedPanchayat = -1;
+      selectedVillage = -1;
+    });
+  }
+
+  void onSelectPanchayat(int selectedPos) {
+    setState(() {
+      selectedPanchayat = selectedPos - 1;
+      selectedVillage = -1;
+    });
+    FocusScope.of(context).unfocus();
+  }
+
+  void onSelectVillage(int selectedPos) {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      selectedVillage = selectedPos - 1;
+    });
+  }
+
+  void onGenderSelect(int selectedPos) {
+    FocusScope.of(context).unfocus();
+    switch (selectedPos) {
+      case 0:
+        gender = Gender.MALE;
+        break;
+      case 1:
+        gender = Gender.FEMALE;
+        break;
+      case 2:
+        gender = Gender.OTHER;
+        break;
+    }
+    setState(() {});
+  }
+
+  getSelectedCategory() {
+    if (initRadio) {
+      return selectedSkilled.name;
+    }
+    if (_selectedRadio == 1) {
+      return selectedSkilled.name;
+    } else {
+      return selectedUnskilled.name;
+    }
+  }
+
+  onSelectCategory(int selectedPos) {
+    FocusScope.of(context).unfocus();
+    if (initRadio || _selectedRadio == 1) {
+      selectedSkilled = Constants.skilledCategories.firstWhere(
+          (cat) => cat.name.compareTo(categoryNames[selectedPos]) == 0);
+      if (selectedSkilled.name
+              .toLowerCase()
+              .compareTo('Others'.toLowerCase()) ==
+          0) {
+        isOther = true;
+      } else {
+        isOther = false;
+      }
+    } else {
+      isOther = false;
+      selectedUnskilled = Constants.unskilledCategories.firstWhere(
+          (cat) => cat.name.compareTo(categoryNames[selectedPos]) == 0);
+    }
+    setState(() {});
+  }
+
+  List<String> getCategoryList() {
+    if (initRadio || _selectedRadio == 1) {
+      categoryNames = Constants.skilledCategories.map((e) => e.name).toList();
+    } else {
+      categoryNames = Constants.unskilledCategories.map((e) => e.name).toList();
+    }
+    return categoryNames;
   }
 }
